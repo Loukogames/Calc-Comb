@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Documentos - Posto de Combustível</title>
+    
+    <!-- Biblioteca de Criptografia AES (Para Proteção de Senha) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
     <style>
         :root {
             --primary-color: #1f4e78;
@@ -28,180 +32,51 @@
         }
         
         /* Cabeçalho */
-        .sheet-header {
-            margin-bottom: 25px;
-        }
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: none;
-            margin-bottom: 10px;
-        }
-        .header-table td {
-            border: none;
-            padding: 0;
-            vertical-align: middle;
-        }
-        .header-img-left {
-            width: 25%;
-            text-align: left;
-        }
-        .header-title-cell {
-            width: 50%;
-            text-align: center;
-        }
-        .header-img-right {
-            width: 25%;
-            text-align: right;
-        }
-        .sheet-header h2 {
-            margin: 0;
-            color: var(--primary-color);
-            font-size: 1.2em;
-        }
-        .sheet-header h3 {
-            margin: 5px 0 0 0;
-            font-weight: normal;
-            color: #555;
-            font-size: 1.2em;
-            text-align: center;
-        }
+        .sheet-header { margin-bottom: 25px; }
+        .header-table { width: 100%; border-collapse: collapse; border: none; margin-bottom: 10px; }
+        .header-table td { border: none; padding: 0; vertical-align: middle; }
+        .header-img-left { width: 25%; text-align: left; }
+        .header-title-cell { width: 50%; text-align: center; }
+        .header-img-right { width: 25%; text-align: right; }
+        .sheet-header h2 { margin: 0; color: var(--primary-color); font-size: 1.2em; }
+        .sheet-header h3 { margin: 5px 0 0 0; font-weight: normal; color: #555; font-size: 1.2em; text-align: center; }
         .notificacao-input {
-            font-size: 1em;
-            font-weight: bold;
-            color: var(--primary-color);
-            border: none;
-            border-bottom: 2px dashed #999;
-            text-align: left;
-            width: 280px;
-            background: transparent;
-            font-family: inherit;
-            padding-left: 4px;
+            font-size: 1em; font-weight: bold; color: var(--primary-color); border: none;
+            border-bottom: 2px dashed #999; text-align: left; width: 280px; background: transparent; padding-left: 4px;
         }
-        .notificacao-input:focus {
-            outline: none;
-            border-bottom: 2px solid var(--primary-color);
-        }
-        
-        /* Controle do texto espelho para a impressão */
-        .print-notificacao {
-            display: none;
-        }
-        
-        .header-img {
-            height: 60px;
-            max-width: 100%;
-            object-fit: contain;
-        }
+        .notificacao-input:focus { outline: none; border-bottom: 2px solid var(--primary-color); }
+        .print-notificacao { display: none; }
+        .header-img { height: 60px; max-width: 100%; object-fit: contain; }
         
         /* Campos da Empresa */
         .info-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 25px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-light);
-            box-sizing: border-box;
+            display: table; width: 100%; margin-bottom: 25px; border: 1px solid var(--border-color);
+            background-color: var(--bg-light); box-sizing: border-box;
         }
-        .info-row {
-            display: table-row;
-        }
-        .info-cell {
-            display: table-cell;
-            padding: 10px;
-            font-size: 0.95em;
-            vertical-align: middle;
-        }
+        .info-row { display: table-row; }
+        .info-cell { display: table-cell; padding: 10px; font-size: 0.95em; vertical-align: middle; }
         .info-cell label { font-weight: bold; color: #444; }
-        .info-cell input {
-            width: 80%;
-            border: none;
-            background: transparent;
-            border-bottom: 1px dashed #999;
-            padding: 2px 5px;
-            font-size: 1em;
-        }
-        .info-cell input:focus {
-            outline: none;
-            border-bottom: 1px solid var(--primary-color);
-        }
+        .info-cell input { width: 80%; border: none; background: transparent; border-bottom: 1px dashed #999; padding: 2px 5px; font-size: 1em; }
+        .info-cell input:focus { outline: none; border-bottom: 1px solid var(--primary-color); }
         
         /* Painéis de Lançamento */
-        .management-sections {
-            display: table;
-            width: 100%;
-            margin-bottom: 30px;
-        }
-        .management-row {
-            display: table-row;
-        }
-        .panel-cell {
-            display: table-cell;
-            width: 33.33%;
-            padding-right: 20px;
-            vertical-align: top;
-        }
-        .panel-cell:last-child {
-            width: 66.66%;
-            padding-right: 0;
-        }
-        .panel {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 15px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-            height: 100%;
-            box-sizing: border-box;
-        }
-        .panel h4 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 5px;
-        }
+        .management-sections { display: table; width: 100%; margin-bottom: 30px; }
+        .management-row { display: table-row; }
+        .panel-cell { display: table-cell; width: 33.33%; padding-right: 20px; vertical-align: top; }
+        .panel-cell:last-child { width: 66.66%; padding-right: 0; }
+        .panel { background: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); height: 100%; box-sizing: border-box; }
+        .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; }
         .form-group { margin-bottom: 12px; }
-        .form-group label {
-            display: block;
-            font-size: 0.85em;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
+        .form-group label { display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         
-        /* Sub-grids usando tabelas internas */
-        .form-table-grid {
-            width: 100%;
-            border-collapse: collapse;
-            border: none;
-        }
-        .form-table-grid td {
-            border: none;
-            padding: 0 5px;
-            vertical-align: top;
-        }
+        .form-table-grid { width: 100%; border-collapse: collapse; border: none; }
+        .form-table-grid td { border: none; padding: 0 5px; vertical-align: top; }
         .form-table-grid td:first-child { padding-left: 0; }
         .form-table-grid td:last-child { padding-right: 0; }
         
         /* Botões */
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.9em;
-            transition: opacity 0.2s;
-        }
+        button { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: opacity 0.2s; }
         button:hover { opacity: 0.85; }
         .btn-danger { background-color: #c0392b; }
         .btn-success { background-color: #27ae60; }
@@ -209,97 +84,28 @@
         .btn-edit-mode { background-color: #f39c12 !important; color: #fff !important; }
         .btn-report { background-color: #8e44ad; color: #fff; }
         
-        .toolbar {
-            text-align: right;
-            margin-bottom: 15px;
-        }
-        .toolbar button {
-            margin-left: 10px;
-        }
+        .toolbar { text-align: right; margin-bottom: 15px; }
+        .toolbar button { margin-left: 10px; }
 
         /* Painel de Opções Adicionais */
         .options-panel {
-            background: #fff;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-size: 0.9em;
-            font-weight: bold;
-            flex-wrap: wrap;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            background: #fff; padding: 15px; margin-bottom: 20px; border: 1px solid var(--border-color);
+            border-radius: 6px; display: flex; align-items: center; gap: 20px; font-size: 0.9em; font-weight: bold; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
-        .options-panel label {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .panel-divider {
-            border-left: 1px solid #ddd;
-            height: 25px;
-        }
-        .select-compare {
-            padding: 3px;
-            font-size: 0.9em;
-            border-radius: 4px;
-            border: 1px solid #888;
-            font-weight: normal;
-            margin-left: 15px;
-        }
+        .options-panel label { cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .panel-divider { border-left: 1px solid #ddd; height: 25px; }
+        .select-compare { padding: 3px; font-size: 0.9em; border-radius: 4px; border: 1px solid #888; font-weight: normal; margin-left: 15px; }
 
         /* Tabela Principal */
-        table.main-sheet-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85em;
-            margin-top: 15px;
-        }
-        table.main-sheet-table th, table.main-sheet-table td {
-            border: 1px solid #7f7f7f;
-            padding: 6px 4px;
-            text-align: center;
-        }
-        table.main-sheet-table th {
-            background-color: #f2f2f2;
-            color: #000;
-            font-weight: bold;
-            vertical-align: middle;
-        }
+        table.main-sheet-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 15px; }
+        table.main-sheet-table th, table.main-sheet-table td { border: 1px solid #7f7f7f; padding: 6px 4px; text-align: center; }
+        table.main-sheet-table th { background-color: #f2f2f2; color: #000; font-weight: bold; vertical-align: middle; }
+        table.main-sheet-table tr.product-header-row td { background-color: var(--row-group-bg); text-align: left !important; font-weight: bold; font-size: 1.05em; letter-spacing: 0.5px; padding-left: 10px !important; }
         
-        /* Alinhamento do Produto à esquerda */
-        table.main-sheet-table tr.product-header-row td {
-            background-color: var(--row-group-bg);
-            text-align: left !important;
-            font-weight: bold;
-            font-size: 1.05em;
-            letter-spacing: 0.5px;
-            padding-left: 10px !important;
-        }
-        
-        /* Linha com campos não preenchidos */
-        .linha-incompleta {
-            background-color: #ffe6e6 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-        
-        .media-row {
-            background-color: #fdfdfd;
-            font-weight: bold;
-        }
-        .media-row td {
-            border-top: 2px solid #555;
-            border-bottom: 2px solid #555;
-        }
-        .actions-cell {
-            border: none !important;
-            background: transparent !important;
-            white-space: nowrap;
-        }
+        .linha-incompleta { background-color: #ffe6e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .media-row { background-color: #fdfdfd; font-weight: bold; }
+        .media-row td { border-top: 2px solid #555; border-bottom: 2px solid #555; }
+        .actions-cell { border: none !important; background: transparent !important; white-space: nowrap; }
         
         @media print {
             @page { margin: 15mm 10mm; }
@@ -324,18 +130,14 @@
     <div class="sheet-header">
         <table class="header-table">
             <tr>
-                <td class="header-img-left">
-                    <img src="image 01.png" alt="Logo Esquerda" class="header-img">
-                </td>
+                <td class="header-img-left"><img src="image 01.png" alt="Logo Esquerda" class="header-img"></td>
                 <td class="header-title-cell">
                     <h2>Análise de Documentos Relativo a Notificação</h2>
                     <div style="margin-top: 8px; font-size: 1.1em; font-weight: bold; color: var(--primary-color);">
                         n° <span id="notificacaoNumSpan" class="print-notificacao"></span><input type="text" id="notificacaoNum" class="notificacao-input no-print" placeholder="Ex: 423/2026">
                     </div>
                 </td>
-                <td class="header-img-right">
-                    <img src="image 02.png" alt="Logo Direita" class="header-img">
-                </td>
+                <td class="header-img-right"><img src="image 02.png" alt="Logo Direita" class="header-img"></td>
             </tr>
         </table>
         <h3>Dados do Estabelecimento Comercial</h3>
@@ -384,22 +186,13 @@
                         <table class="form-table-grid" style="margin-bottom: 10px;">
                             <tr>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group">
-                                        <label>Nº Doc / NF (Coluna 1)</label>
-                                        <input type="text" id="docId" required>
-                                    </div>
+                                    <div class="form-group"><label>Nº Doc / NF (Coluna 1)</label><input type="text" id="docId" required></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group">
-                                        <label>PERÍODO (Compra/Venda)</label>
-                                        <input type="text" id="periodo" placeholder="Ex: 02/02/2026" required>
-                                    </div>
+                                    <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="periodo" placeholder="Ex: 02/02/2026" required></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group">
-                                        <label>PREÇO AQUISIÇÃO (R$/UNID.) [A]</label>
-                                        <input type="number" id="aquisicao" step="0.0001">
-                                    </div>
+                                    <div class="form-group"><label>PREÇO AQUISIÇÃO [A]</label><input type="number" id="aquisicao" step="0.0001"></div>
                                 </td>
                             </tr>
                         </table>
@@ -407,22 +200,13 @@
                         <table class="form-table-grid">
                             <tr>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group">
-                                        <label>Preço do Frete [Opcional]</label>
-                                        <input type="number" id="frete" step="0.0001">
-                                    </div>
+                                    <div class="form-group"><label>Preço do Frete [Opcional]</label><input type="number" id="frete" step="0.0001"></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group">
-                                        <label>PREÇO DE VENDA [B]</label>
-                                        <input type="number" id="venda" step="0.0001">
-                                    </div>
+                                    <div class="form-group"><label>PREÇO DE VENDA [B]</label><input type="number" id="venda" step="0.0001"></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group">
-                                        <label>Quantidade de Litros [Opcional]</label>
-                                        <input type="number" id="qtdLitros" step="0.01">
-                                    </div>
+                                    <div class="form-group"><label>Quant. Litros [Opcional]</label><input type="number" id="qtdLitros" step="0.01"></div>
                                 </td>
                             </tr>
                         </table>
@@ -472,11 +256,12 @@
 </div>
 
 <script>
-    // Variáveis Globais Originais
+    // -------------------------------------------------------------------------
+    // DECLARAÇÃO DE VARIÁVEIS GLOBAIS
+    // -------------------------------------------------------------------------
     let bancoDados = [];
     let editandoInfo = null;
 
-    // Referências do DOM Originais
     const productForm = document.getElementById('productForm');
     const entryForm = document.getElementById('entryForm');
     const selectProduct = document.getElementById('selectProduct');
@@ -485,12 +270,14 @@
     const notificacaoInput = document.getElementById('notificacaoNum');
     const notificacaoSpan = document.getElementById('notificacaoNumSpan');
 
-    // Sincroniza Notificação
+    // Sincroniza número da notificação
     notificacaoInput.addEventListener('input', function() {
         notificacaoSpan.textContent = this.value;
     });
 
-    // Controles dos Checkboxes
+    // -------------------------------------------------------------------------
+    // FUNÇÕES DE LÓGICA E CÁLCULO GERAL
+    // -------------------------------------------------------------------------
     function toggleComparar() {
         if (document.getElementById('chkComparar').checked) {
             document.getElementById('chkQtdLitros').checked = true;
@@ -505,7 +292,6 @@
         atualizarTabela();
     }
 
-    // Estilo Visual Degradê
     function getGradientStyle(val, min, max) {
         if (min === max || val === undefined || isNaN(val)) return '';
         let ratio = (val - min) / (max - min); 
@@ -513,7 +299,6 @@
         return `background-color: hsl(${hue}, 80%, 85%) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;`;
     }
 
-    // Configura o Período Base (Comparação)
     function setPeriodoComparacao(nomeProduto, periodo) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         if (prod) {
@@ -522,7 +307,6 @@
         }
     }
 
-    // Lógica Original de Datas
     function parseDate(str) {
         if (!str) return 0;
         if (str.includes('/')) {
@@ -536,13 +320,11 @@
         return 0;
     }
 
-    // Recalcula Indicadores Básicos
     function recalcularProduto(nomeProduto) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         if (!prod || prod.linhas.length === 0) return;
         
         prod.linhas.sort((a, b) => parseDate(a.periodo) - parseDate(b.periodo));
-        
         const margemBaseD = prod.linhas[0].margemD || 0;
         
         prod.linhas.forEach(l => {
@@ -552,7 +334,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // CADASTRO DE PRODUTO
+    // EVENTOS DOS FORMULÁRIOS (ADICIONAR E LANÇAR)
     // -------------------------------------------------------------------------
     productForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -569,9 +351,6 @@
         productForm.reset();
     });
 
-    // -------------------------------------------------------------------------
-    // LANÇAMENTO DE DADOS (LINHAS)
-    // -------------------------------------------------------------------------
     entryForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -645,33 +424,21 @@
     });
 
     // -------------------------------------------------------------------------
-    // FUNÇÕES DE EDIÇÃO (Blindadas pelo ID para não quebrar aspas)
+    // EDIÇÃO E EXCLUSÃO
     // -------------------------------------------------------------------------
-    function editarLinha(idLinha) {
-        let nomeProdutoEncontrado = null;
-        let linhaEncontrada = null;
+    function editarLinha(nomeProduto, idLinha) {
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        const font_linha = prod.linhas.find(l => l.id === idLinha);
         
-        for(let p of bancoDados) {
-            let l = p.linhas.find(x => x.id === idLinha);
-            if(l) {
-                nomeProdutoEncontrado = p.nome;
-                linhaEncontrada = l;
-                break;
-            }
-        }
+        selectProduct.value = nomeProduto;
+        document.getElementById('docId').value = font_linha.docId;
+        document.getElementById('periodo').value = font_linha.periodo;
+        document.getElementById('aquisicao').value = font_linha.isAquisicaoVazia ? '' : font_linha.aquisicao;
+        document.getElementById('frete').value = font_linha.frete > 0 ? font_linha.frete : '';
+        document.getElementById('venda').value = font_linha.isVendaVazia ? '' : font_linha.venda;
+        document.getElementById('qtdLitros').value = (font_linha.qtdLitros && font_linha.qtdLitros > 0) ? font_linha.qtdLitros : '';
         
-        if (!linhaEncontrada) return;
-        
-        selectProduct.value = nomeProdutoEncontrado;
-        document.getElementById('docId').value = linhaEncontrada.docId;
-        document.getElementById('periodo').value = linhaEncontrada.periodo;
-        document.getElementById('aquisicao').value = linhaEncontrada.isAquisicaoVazia ? '' : linhaEncontrada.aquisicao;
-        document.getElementById('frete').value = linhaEncontrada.frete > 0 ? linhaEncontrada.frete : '';
-        document.getElementById('venda').value = linhaEncontrada.isVendaVazia ? '' : linhaEncontrada.venda;
-        document.getElementById('qtdLitros').value = (linhaEncontrada.qtdLitros && linhaEncontrada.qtdLitros > 0) ? linhaEncontrada.qtdLitros : '';
-        
-        editandoInfo = { nomeProduto: nomeProdutoEncontrado, idLinha: idLinha };
-        
+        editandoInfo = { nomeProduto, idLinha };
         document.getElementById('btnSubmitEntry').textContent = "Salvar Edição";
         document.getElementById('btnSubmitEntry').classList.add('btn-edit-mode');
         document.getElementById('btnCancelEdit').style.display = 'inline-block';
@@ -685,16 +452,13 @@
         if(limparForm) document.getElementById('entryForm').reset();
     }
 
-    function removerLinha(idLinha) {
+    function removerLinha(nomeProduto, idLinha) {
         if(confirm('Tem certeza que deseja apagar este lançamento?')) {
-            for(let p of bancoDados) {
-                const idx = p.linhas.findIndex(x => x.id === idLinha);
-                if(idx !== -1) {
-                    p.linhas.splice(idx, 1);
-                    recalcularProduto(p.nome);
-                    atualizarTabela();
-                    break;
-                }
+            const prod = bancoDados.find(p => p.nome === nomeProduto);
+            if (prod) {
+                prod.linhas = prod.linhas.filter(l => l.id !== idLinha);
+                recalcularProduto(nomeProduto);
+                atualizarTabela();
             }
         }
     }
@@ -710,7 +474,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // RENDERIZAÇÃO DA TABELA (Cálculos de Colunas Exatos)
+    // RENDERIZAÇÃO DA TABELA (MOTOR PRINCIPAL)
     // -------------------------------------------------------------------------
     function atualizarTabela() {
         sheetTableHead.innerHTML = '';
@@ -736,18 +500,15 @@
             }
         });
 
-        // Controle para ocultar QTD LITROS na impressão se a caixa não estiver marcada
+        // Ocultar a coluna QTD LITROS na impressão caso não se deseje calcular lucro
         const clsLitrosPrint = showQtdLitros ? "" : "no-print";
 
-        // Matemática de Colunas do Cabeçalho e da Tabela
-        let totalColunas = 9; // Base de colunas originais (Incluindo coluna de Ações)
+        // Contagem de Colunas
+        let totalColunas = 9; 
         if (temFrete) totalColunas++;
         if (temLitros) totalColunas++;
         if (showQtdLitros) totalColunas++;
         if (showQtdLitros && showComparar) totalColunas++;
-
-        // Subtraímos 1 para o colspan porque a coluna de "Ações" não é agrupada
-        const colspanProduto = totalColunas - 1;
 
         let theadHTML = `
             <tr>
@@ -803,7 +564,7 @@
             if (prod.linhas.length >= 0) {
                 let selectHtml = '';
                 if (showQtdLitros && showComparar && prod.linhas.length > 0) {
-                    const nomeSafe = prod.nome.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    const nomeSafe = prod.nome.replace(/'/g, "\\'");
                     selectHtml = `<select class="select-compare no-print" onchange="setPeriodoComparacao('${nomeSafe}', this.value)">
                         <option value="">-- Período para comparar --</option>
                         ${prod.linhas.map(l => `<option value="${l.periodo}" ${prod.periodoComparacao === l.periodo ? 'selected' : ''}>Base: ${l.periodo}</option>`).join('')}
@@ -811,7 +572,7 @@
                 }
                 const rowHeader = document.createElement('tr');
                 rowHeader.className = "product-header-row";
-                rowHeader.innerHTML = `<td colspan="${colspanProduto}"><b>${prod.nome}</b> ${selectHtml}</td><td class="no-print actions-cell"></td>`;
+                rowHeader.innerHTML = `<td colspan="${totalColunas - 1}"><b>${prod.nome}</b> ${selectHtml}</td><td class="no-print actions-cell"></td>`;
                 sheetTableBody.appendChild(rowHeader);
             }
 
@@ -883,6 +644,8 @@
                     }
                 }
 
+                const nomeSafeBotao = prod.nome.replace(/'/g, "\\'");
+
                 tr.innerHTML = `
                     <td>${lin.docId || ''}</td>
                     <td>${lin.periodo || ''}</td>
@@ -897,8 +660,8 @@
                     ${tdQtd}
                     ${tdComp}
                     <td class="no-print actions-cell">
-                        <button type="button" class="btn-edit" style="padding:2px 6px; font-size:0.8em; margin-right:4px;" onclick="editarLinha(${lin.id})">✏️</button>
-                        <button type="button" class="btn-danger" style="padding:2px 6px; font-size:0.8em;" onclick="removerLinha(${lin.id})">X</button>
+                        <button type="button" class="btn-edit" style="padding:2px 6px; font-size:0.8em; margin-right:4px;" onclick="editarLinha('${nomeSafeBotao}', ${lin.id})">✏️</button>
+                        <button type="button" class="btn-danger" style="padding:2px 6px; font-size:0.8em;" onclick="removerLinha('${nomeSafeBotao}', ${lin.id})">X</button>
                     </td>
                 `;
                 sheetTableBody.appendChild(tr);
@@ -950,7 +713,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // RELATÓRIOS E BACKUP (SALVAR/IMPORTAR)
+    // RELATÓRIOS (Semanal / Mensal)
     // -------------------------------------------------------------------------
     function gerarRelatorio() {
         if(bancoDados.length === 0) return alert("Não há dados cadastrados para gerar o relatório.");
@@ -980,7 +743,7 @@
                 let labelFormated = "";
 
                 if(tipo === 'M') {
-                    // YYYY-MM para ordenação alfabética invisível perfeita
+                    // YYYY-MM para ordenação invisível correta
                     key = `${parts[2]}-${parts[1]}`;
                     labelFormated = `${parts[1]}/${parts[2]}`;
                 } else {
@@ -1039,7 +802,7 @@
                     <tr>
                         <th>Período</th>
                         <th>Produto</th>
-                        <th>Total de Litros</th>
+                        <th>Total de Litros Lançados</th>
                         <th>Lucro Estimado (R$)</th>
                     </tr>
                 </thead>
@@ -1094,18 +857,21 @@
         janela.document.close();
     }
 
+    // -------------------------------------------------------------------------
+    // CRIPTOGRAFIA (SALVAR / IMPORTAR)
+    // -------------------------------------------------------------------------
     function salvarDados() {
         const chkInd = document.getElementById('chkIndicador');
         const chkQtd = document.getElementById('chkQtdLitros');
         const chkCmp = document.getElementById('chkComparar');
 
         const pacoteBackup = {
-            notificacao: notificacaoInput.value,
-            razaoSocial: document.getElementById('razaoSocial').value,
-            cnpj: document.getElementById('cnpj').value,
-            endereco: document.getElementById('endereco').value,
-            contato: document.getElementById('contato').value,
-            produtoHeader: document.getElementById('produtoHeader').value,
+            notificacao: document.getElementById('notificacaoNum') ? document.getElementById('notificacaoNum').value : '',
+            razaoSocial: document.getElementById('razaoSocial') ? document.getElementById('razaoSocial').value : '',
+            cnpj: document.getElementById('cnpj') ? document.getElementById('cnpj').value : '',
+            endereco: document.getElementById('endereco') ? document.getElementById('endereco').value : '',
+            contato: document.getElementById('contato') ? document.getElementById('contato').value : '',
+            produtoHeader: document.getElementById('produtoHeader') ? document.getElementById('produtoHeader').value : '',
             bancoDados: bancoDados,
             configs: {
                 indicador: chkInd ? chkInd.checked : false,
@@ -1114,7 +880,30 @@
             }
         };
 
-        const jsonString = JSON.stringify(pacoteBackup, null, 2);
+        let jsonString = JSON.stringify(pacoteBackup, null, 2);
+
+        // Prompt de Criptografia
+        const desejaSenha = confirm("Deseja proteger este arquivo de backup com uma SENHA?\n\n(OK = Sim. Cancelar = Salvar sem senha)");
+        
+        if (desejaSenha) {
+            const senha = prompt("🔒 Digite a senha para proteger o arquivo:");
+            if (!senha) {
+                alert("Operação cancelada. A planilha NÃO foi salva.");
+                return;
+            }
+            try {
+                const dadosCriptografados = CryptoJS.AES.encrypt(jsonString, senha).toString();
+                const pacoteSeguro = {
+                    encrypted: true,
+                    data: dadosCriptografados
+                };
+                jsonString = JSON.stringify(pacoteSeguro, null, 2);
+            } catch (err) {
+                alert("Falha ao criptografar o arquivo.");
+                return;
+            }
+        }
+
         const blob = new Blob([jsonString], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         
@@ -1143,20 +932,42 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const dados = JSON.parse(e.target.result);
-                if (dados && Array.isArray(dados.bancoDados)) {
-                    notificacaoInput.value = dados.notificacao || '';
-                    notificacaoSpan.textContent = dados.notificacao || '';
+                let dadosBrutos = JSON.parse(e.target.result);
+                
+                // Descriptografia
+                if (dadosBrutos.encrypted && dadosBrutos.data) {
+                    const senha = prompt("🔒 Este arquivo está protegido.\nDigite a senha para abrir:");
+                    if (!senha) {
+                        alert("Operação cancelada.");
+                        input.value = '';
+                        return;
+                    }
                     
-                    document.getElementById('razaoSocial').value = dados.razaoSocial || '';
-                    document.getElementById('cnpj').value = dados.cnpj || '';
-                    document.getElementById('endereco').value = dados.endereco || '';
-                    document.getElementById('contato').value = dados.contato || '';
-                    document.getElementById('produtoHeader').value = dados.produtoHeader || '';
+                    const bytes = CryptoJS.AES.decrypt(dadosBrutos.data, senha);
+                    const jsonDescriptografado = bytes.toString(CryptoJS.enc.Utf8);
                     
-                    bancoDados = dados.bancoDados;
+                    if (!jsonDescriptografado) {
+                        throw new Error("Senha incorreta");
+                    }
+                    
+                    dadosBrutos = JSON.parse(jsonDescriptografado);
+                }
 
-                    // Varredura de segurança para dados antigos (Converte possíveis nulos em zero)
+                if (dadosBrutos && Array.isArray(dadosBrutos.bancoDados)) {
+                    const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ''; };
+                    
+                    setVal('notificacaoNum', dadosBrutos.notificacao);
+                    if(document.getElementById('notificacaoNumSpan')) document.getElementById('notificacaoNumSpan').textContent = dadosBrutos.notificacao || '';
+                    
+                    setVal('razaoSocial', dadosBrutos.razaoSocial);
+                    setVal('cnpj', dadosBrutos.cnpj);
+                    setVal('endereco', dadosBrutos.endereco);
+                    setVal('contato', dadosBrutos.contato);
+                    setVal('produtoHeader', dadosBrutos.produtoHeader);
+                    
+                    bancoDados = dadosBrutos.bancoDados;
+
+                    // Compatibilidade e Higienização de dados velhos
                     bancoDados.forEach(p => {
                         if(!p.periodoComparacao) p.periodoComparacao = '';
                         if(!p.linhas) p.linhas = [];
@@ -1165,17 +976,21 @@
                             l.aquisicao = Number(l.aquisicao) || 0;
                             l.venda = Number(l.venda) || 0;
                             l.frete = Number(l.frete) || 0;
+                            l.lucroBrutoC = Number(l.lucroBrutoC) || 0;
+                            l.margemD = Number(l.margemD) || 0;
                         });
                     });
 
-                    if(dados.configs) {
-                        document.getElementById('chkIndicador').checked = dados.configs.indicador || false;
-                        document.getElementById('chkQtdLitros').checked = dados.configs.qtdLitrosCheck || false;
-                        document.getElementById('chkComparar').checked = dados.configs.compararCheck || false;
+                    const setChk = (id, val) => { if(document.getElementById(id)) document.getElementById(id).checked = !!val; };
+                    
+                    if(dadosBrutos.configs) {
+                        setChk('chkIndicador', dadosBrutos.configs.indicador);
+                        setChk('chkQtdLitros', dadosBrutos.configs.qtdLitrosCheck);
+                        setChk('chkComparar', dadosBrutos.configs.compararCheck);
                     } else {
-                        document.getElementById('chkIndicador').checked = false;
-                        document.getElementById('chkQtdLitros').checked = false;
-                        document.getElementById('chkComparar').checked = false;
+                        setChk('chkIndicador', false);
+                        setChk('chkQtdLitros', false);
+                        setChk('chkComparar', false);
                     }
                     
                     atualizarDropdown();
@@ -1185,7 +1000,11 @@
                     alert('Arquivo inválido ou em formato incorreto.');
                 }
             } catch (err) {
-                alert('Erro ao processar o arquivo. Estrutura incompatível.');
+                if (err.message === "Senha incorreta") {
+                    alert('❌ Senha incorreta!');
+                } else {
+                    alert('Erro ao processar o arquivo. Ele pode estar corrompido.');
+                }
             } finally {
                 input.value = '';
             }
