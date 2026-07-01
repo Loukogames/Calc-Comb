@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Documentos - Posto de Combustível</title>
     
-    <!-- Biblioteca de Criptografia AES (Para Proteção de Senha) -->
+    <!-- Biblioteca de Criptografia AES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <style>
@@ -84,8 +84,15 @@
         .btn-edit-mode { background-color: #f39c12 !important; color: #fff !important; }
         .btn-report { background-color: #8e44ad; color: #fff; }
         
-        .toolbar { text-align: right; margin-bottom: 15px; }
-        .toolbar button { margin-left: 10px; }
+        /* FIX DA BARRA DE BOTÕES PARA O GITHUB PAGES (Flexbox) */
+        .toolbar { 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center;
+            gap: 10px; 
+            flex-wrap: wrap;
+            margin-bottom: 15px; 
+        }
 
         /* Painel de Opções Adicionais */
         .options-panel {
@@ -240,6 +247,7 @@
         </label>
     </div>
 
+    <!-- BARRA DE BOTÕES CORRIGIDA -->
     <div class="toolbar no-print">
         <button type="button" class="btn-report" onclick="gerarRelatorio()">📊 Gerar Relatório</button>
         <button type="button" class="btn-success" onclick="salvarDados()">💾 Salvar Planilha</button>
@@ -500,7 +508,7 @@
             }
         });
 
-        // Ocultar a coluna QTD LITROS na impressão caso não se deseje calcular lucro
+        // Oculta "QTD LITROS" da impressão caso a caixa de Calcular não esteja marcada
         const clsLitrosPrint = showQtdLitros ? "" : "no-print";
 
         // Contagem de Colunas
@@ -564,7 +572,7 @@
             if (prod.linhas.length >= 0) {
                 let selectHtml = '';
                 if (showQtdLitros && showComparar && prod.linhas.length > 0) {
-                    const nomeSafe = prod.nome.replace(/'/g, "\\'");
+                    const nomeSafe = prod.nome.replace(/"/g, '&quot;').replace(/'/g, "\\'");
                     selectHtml = `<select class="select-compare no-print" onchange="setPeriodoComparacao('${nomeSafe}', this.value)">
                         <option value="">-- Período para comparar --</option>
                         ${prod.linhas.map(l => `<option value="${l.periodo}" ${prod.periodoComparacao === l.periodo ? 'selected' : ''}>Base: ${l.periodo}</option>`).join('')}
