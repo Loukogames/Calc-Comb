@@ -27,7 +27,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         
-        /* Cabeçalho Estruturado: Imagem Esquerda - Título Centro - Imagem Direita */
+        /* Cabeçalho */
         .sheet-header {
             margin-bottom: 25px;
         }
@@ -207,6 +207,7 @@
         .btn-success { background-color: #27ae60; }
         .btn-edit { background-color: #f39c12; color: #fff; }
         .btn-edit-mode { background-color: #f39c12 !important; color: #fff !important; }
+        .btn-report { background-color: #8e44ad; color: #fff; }
         
         .toolbar {
             text-align: right;
@@ -214,6 +215,40 @@
         }
         .toolbar button {
             margin-left: 10px;
+        }
+
+        /* Painel de Opções Adicionais */
+        .options-panel {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .options-panel label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .panel-divider {
+            border-left: 1px solid #ddd;
+            height: 25px;
+        }
+        .select-compare {
+            padding: 3px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            border: 1px solid #888;
+            font-weight: normal;
+            margin-left: 15px;
         }
 
         /* Tabela Principal */
@@ -245,7 +280,7 @@
             padding-left: 10px !important;
         }
         
-        /* Linha com campos não preenchidos (Destaque em Vermelho Claro) */
+        /* Linha com campos não preenchidos */
         .linha-incompleta {
             background-color: #ffe6e6 !important;
             -webkit-print-color-adjust: exact;
@@ -267,17 +302,13 @@
         }
         
         @media print {
-            @page {
-                margin: 15mm 10mm;
-            }
+            @page { margin: 15mm 10mm; }
             body { background: white; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; }
             .no-print { display: none !important; }
             .info-cell input { border-bottom: none; }
-            
             .notificacao-input { display: none !important; }
             .print-notificacao { display: inline !important; }
-            
             table.main-sheet-table { font-size: 9pt; }
             thead { display: table-row-group; }
             table.main-sheet-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -375,16 +406,22 @@
 
                         <table class="form-table-grid">
                             <tr>
-                                <td style="width: 50%;">
+                                <td style="width: 33.33%;">
                                     <div class="form-group">
-                                        <label>Preço do Frete (R$/UNID.) [Opcional]</label>
+                                        <label>Preço do Frete [Opcional]</label>
                                         <input type="number" id="frete" step="0.0001">
                                     </div>
                                 </td>
-                                <td style="width: 50%;">
+                                <td style="width: 33.33%;">
                                     <div class="form-group">
-                                        <label>PREÇO DE VENDA (R$/UNID.) [B]</label>
+                                        <label>PREÇO DE VENDA [B]</label>
                                         <input type="number" id="venda" step="0.0001">
+                                    </div>
+                                </td>
+                                <td style="width: 33.33%;">
+                                    <div class="form-group">
+                                        <label>Quantidade de Litros [Opcional]</label>
+                                        <input type="number" id="qtdLitros" step="0.01">
                                     </div>
                                 </td>
                             </tr>
@@ -400,26 +437,46 @@
         </div>
     </div>
 
+    <!-- Painel de Opções Adicionais -->
+    <div class="options-panel no-print">
+        <label title="Aplica cores verde/vermelho indicando as maiores/menores margens.">
+            <input type="checkbox" id="chkIndicador" onchange="atualizarTabela()"> 🎨 Indicador de Margem (Degradê)
+        </label>
+        
+        <div class="panel-divider"></div>
+        
+        <label title="Ativa a coluna que multiplica os Litros lançados pela Margem Bruta (Lucro).">
+            <input type="checkbox" id="chkQtdLitros" onchange="toggleQtdLitros()"> ⛽ Calcular Lucro p/ Litros
+        </label>
+
+        <div class="panel-divider"></div>
+
+        <label title="Habilita a seleção de um período base no cabeçalho de cada produto para calcular a diferença de lucro.">
+            <input type="checkbox" id="chkComparar" onchange="toggleComparar()"> ⚖️ Comparar Período
+        </label>
+    </div>
+
     <div class="toolbar no-print">
-        <button class="btn-success" onclick="salvarDados()">💾 Salvar Planilha</button>
-        <button class="btn-edit" onclick="acionarImportacao()">📂 Importar Planilha</button>
+        <button type="button" class="btn-report" onclick="gerarRelatorio()">📊 Gerar Relatório</button>
+        <button type="button" class="btn-success" onclick="salvarDados()">💾 Salvar Planilha</button>
+        <button type="button" class="btn-edit" onclick="acionarImportacao()">📂 Importar Planilha</button>
         <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importarDados(this)">
-        <button class="btn-danger" onclick="limparTudo()">Limpar Tudo</button>
-        <button onclick="window.print()">Imprimir Planilha</button>
+        <button type="button" class="btn-danger" onclick="limparTudo()">Limpar Tudo</button>
+        <button type="button" onclick="window.print()">🖨️ Imprimir Planilha</button>
     </div>
 
     <table class="main-sheet-table">
-        <thead id="sheetTableHead">
-            </thead>
-        <tbody id="sheetTableBody">
-            </tbody>
+        <thead id="sheetTableHead"></thead>
+        <tbody id="sheetTableBody"></tbody>
     </table>
 </div>
 
 <script>
+    // Variáveis Globais Originais
     let bancoDados = [];
     let editandoInfo = null;
 
+    // Referências do DOM Originais
     const productForm = document.getElementById('productForm');
     const entryForm = document.getElementById('entryForm');
     const selectProduct = document.getElementById('selectProduct');
@@ -428,10 +485,44 @@
     const notificacaoInput = document.getElementById('notificacaoNum');
     const notificacaoSpan = document.getElementById('notificacaoNumSpan');
 
+    // Sincroniza Notificação
     notificacaoInput.addEventListener('input', function() {
         notificacaoSpan.textContent = this.value;
     });
 
+    // Controles dos Checkboxes
+    function toggleComparar() {
+        if (document.getElementById('chkComparar').checked) {
+            document.getElementById('chkQtdLitros').checked = true;
+        }
+        atualizarTabela();
+    }
+    
+    function toggleQtdLitros() {
+        if (!document.getElementById('chkQtdLitros').checked) {
+            document.getElementById('chkComparar').checked = false; 
+        }
+        atualizarTabela();
+    }
+
+    // Estilo Visual Degradê
+    function getGradientStyle(val, min, max) {
+        if (min === max || val === undefined || isNaN(val)) return '';
+        let ratio = (val - min) / (max - min); 
+        let hue = 120 - (ratio * 120); 
+        return `background-color: hsl(${hue}, 80%, 85%) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;`;
+    }
+
+    // Configura o Período Base (Comparação)
+    function setPeriodoComparacao(nomeProduto, periodo) {
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        if (prod) {
+            prod.periodoComparacao = periodo;
+            atualizarTabela();
+        }
+    }
+
+    // Lógica Original de Datas
     function parseDate(str) {
         if (!str) return 0;
         if (str.includes('/')) {
@@ -445,20 +536,24 @@
         return 0;
     }
 
+    // Recalcula Indicadores Básicos
     function recalcularProduto(nomeProduto) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         if (!prod || prod.linhas.length === 0) return;
         
         prod.linhas.sort((a, b) => parseDate(a.periodo) - parseDate(b.periodo));
         
-        const margemBaseD = prod.linhas[0].margemD;
+        const margemBaseD = prod.linhas[0].margemD || 0;
         
         prod.linhas.forEach(l => {
-            l.aumentoReducaoE = l.margemD - margemBaseD;
+            l.aumentoReducaoE = (l.margemD || 0) - margemBaseD;
             l.percentualReajuste = l.aquisicao > 0 ? (l.venda / l.aquisicao) - 1 : 0;
         });
     }
 
+    // -------------------------------------------------------------------------
+    // CADASTRO DE PRODUTO
+    // -------------------------------------------------------------------------
     productForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const productName = document.getElementById('newProductName').value.trim().toUpperCase();
@@ -468,12 +563,15 @@
             return;
         }
 
-        bancoDados.push({ nome: productName, linhas: [] });
+        bancoDados.push({ nome: productName, linhas: [], periodoComparacao: '' });
         atualizarDropdown();
         atualizarTabela();
         productForm.reset();
     });
 
+    // -------------------------------------------------------------------------
+    // LANÇAMENTO DE DADOS (LINHAS)
+    // -------------------------------------------------------------------------
     entryForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -482,15 +580,18 @@
         const periodo = document.getElementById('periodo').value;
         
         const aquisicaoStr = document.getElementById('aquisicao').value;
-        const isAquisicaoVazia = aquisicaoStr === '';
+        const isAquisicaoVazia = (aquisicaoStr === '');
         const aquisicao = isAquisicaoVazia ? 0 : parseFloat(aquisicaoStr);
         
         const vendaStr = document.getElementById('venda').value;
-        const isVendaVazia = vendaStr === '';
+        const isVendaVazia = (vendaStr === '');
         const venda = isVendaVazia ? 0 : parseFloat(vendaStr);
         
         const freteStr = document.getElementById('frete').value;
-        const frete = freteStr === '' ? 0 : parseFloat(freteStr);
+        const frete = (freteStr === '') ? 0 : parseFloat(freteStr);
+
+        const qtdStr = document.getElementById('qtdLitros').value;
+        const qtdLitros = (qtdStr === '') ? 0 : parseFloat(qtdStr);
 
         const produtoObj = bancoDados.find(p => p.nome === produtoSelecionado);
         if (!produtoObj) return;
@@ -500,17 +601,18 @@
 
         const novaLinha = {
             id: editandoInfo ? editandoInfo.idLinha : Date.now(),
-            docId,
-            periodo,
-            aquisicao,
-            isAquisicaoVazia,
-            frete,
-            venda,
-            isVendaVazia,
-            lucroBrutoC,
-            margemD,
+            docId: docId,
+            periodo: periodo,
+            aquisicao: aquisicao,
+            isAquisicaoVazia: isAquisicaoVazia,
+            frete: frete,
+            venda: venda,
+            isVendaVazia: isVendaVazia,
+            lucroBrutoC: lucroBrutoC,
+            margemD: margemD,
             aumentoReducaoE: 0,
-            percentualReajuste: 0
+            percentualReajuste: 0,
+            qtdLitros: qtdLitros
         };
 
         if (editandoInfo) {
@@ -538,21 +640,38 @@
         document.getElementById('aquisicao').value = '';
         document.getElementById('frete').value = '';
         document.getElementById('venda').value = '';
+        document.getElementById('qtdLitros').value = '';
         document.getElementById('docId').focus();
     });
 
-    function editarLinha(nomeProduto, idLinha) {
-        const prod = bancoDados.find(p => p.nome === nomeProduto);
-        const font_linha = prod.linhas.find(l => l.id === idLinha);
+    // -------------------------------------------------------------------------
+    // FUNÇÕES DE EDIÇÃO (Blindadas pelo ID para não quebrar aspas)
+    // -------------------------------------------------------------------------
+    function editarLinha(idLinha) {
+        let nomeProdutoEncontrado = null;
+        let linhaEncontrada = null;
         
-        selectProduct.value = nomeProduto;
-        document.getElementById('docId').value = font_linha.docId;
-        document.getElementById('periodo').value = font_linha.periodo;
-        document.getElementById('aquisicao').value = font_linha.isAquisicaoVazia ? '' : font_linha.aquisicao;
-        document.getElementById('frete').value = font_linha.frete > 0 ? font_linha.frete : '';
-        document.getElementById('venda').value = font_linha.isVendaVazia ? '' : font_linha.venda;
+        for(let p of bancoDados) {
+            let l = p.linhas.find(x => x.id === idLinha);
+            if(l) {
+                nomeProdutoEncontrado = p.nome;
+                linhaEncontrada = l;
+                break;
+            }
+        }
         
-        editandoInfo = { nomeProduto, idLinha };
+        if (!linhaEncontrada) return;
+        
+        selectProduct.value = nomeProdutoEncontrado;
+        document.getElementById('docId').value = linhaEncontrada.docId;
+        document.getElementById('periodo').value = linhaEncontrada.periodo;
+        document.getElementById('aquisicao').value = linhaEncontrada.isAquisicaoVazia ? '' : linhaEncontrada.aquisicao;
+        document.getElementById('frete').value = linhaEncontrada.frete > 0 ? linhaEncontrada.frete : '';
+        document.getElementById('venda').value = linhaEncontrada.isVendaVazia ? '' : linhaEncontrada.venda;
+        document.getElementById('qtdLitros').value = (linhaEncontrada.qtdLitros && linhaEncontrada.qtdLitros > 0) ? linhaEncontrada.qtdLitros : '';
+        
+        editandoInfo = { nomeProduto: nomeProdutoEncontrado, idLinha: idLinha };
+        
         document.getElementById('btnSubmitEntry').textContent = "Salvar Edição";
         document.getElementById('btnSubmitEntry').classList.add('btn-edit-mode');
         document.getElementById('btnCancelEdit').style.display = 'inline-block';
@@ -566,13 +685,16 @@
         if(limparForm) document.getElementById('entryForm').reset();
     }
 
-    function removerLinha(nomeProduto, idLinha) {
+    function removerLinha(idLinha) {
         if(confirm('Tem certeza que deseja apagar este lançamento?')) {
-            const prod = bancoDados.find(p => p.nome === nomeProduto);
-            if (prod) {
-                prod.linhas = prod.linhas.filter(l => l.id !== idLinha);
-                recalcularProduto(nomeProduto);
-                atualizarTabela();
+            for(let p of bancoDados) {
+                const idx = p.linhas.findIndex(x => x.id === idLinha);
+                if(idx !== -1) {
+                    p.linhas.splice(idx, 1);
+                    recalcularProduto(p.nome);
+                    atualizarTabela();
+                    break;
+                }
             }
         }
     }
@@ -587,26 +709,66 @@
         });
     }
 
+    // -------------------------------------------------------------------------
+    // RENDERIZAÇÃO DA TABELA (Cálculos de Colunas Exatos)
+    // -------------------------------------------------------------------------
     function atualizarTabela() {
         sheetTableHead.innerHTML = '';
         sheetTableBody.innerHTML = '';
 
+        const chkInd = document.getElementById('chkIndicador');
+        const chkQtd = document.getElementById('chkQtdLitros');
+        const chkCmp = document.getElementById('chkComparar');
+
+        const showIndicador = chkInd ? chkInd.checked : false;
+        const showQtdLitros = chkQtd ? chkQtd.checked : false;
+        const showComparar = chkCmp ? chkCmp.checked : false;
+
         let temFrete = false;
-        bancoDados.forEach(p => p.linhas.forEach(l => { if (l.frete > 0) temFrete = true; }));
+        let temLitros = false;
+        
+        bancoDados.forEach(p => {
+            if(p.linhas && Array.isArray(p.linhas)) {
+                p.linhas.forEach(l => { 
+                    if (l.frete > 0) temFrete = true; 
+                    if (l.qtdLitros && l.qtdLitros > 0) temLitros = true;
+                });
+            }
+        });
+
+        // Controle para ocultar QTD LITROS na impressão se a caixa não estiver marcada
+        const clsLitrosPrint = showQtdLitros ? "" : "no-print";
+
+        // Matemática de Colunas do Cabeçalho e da Tabela
+        let totalColunas = 9; // Base de colunas originais (Incluindo coluna de Ações)
+        if (temFrete) totalColunas++;
+        if (temLitros) totalColunas++;
+        if (showQtdLitros) totalColunas++;
+        if (showQtdLitros && showComparar) totalColunas++;
+
+        // Subtraímos 1 para o colspan porque a coluna de "Ações" não é agrupada
+        const colspanProduto = totalColunas - 1;
 
         let theadHTML = `
             <tr>
                 <th rowspan="2" style="width: 12%;">DESCRIÇÃO DO PRODUTO</th>
                 <th rowspan="2" style="width: 14%;">PERÍODO<br>(1º P. COMPRA 2º P. VENDA)</th>
-                <th style="width: 11%;">[A]</th>
+                <th style="width: 10%;">[A]</th>
         `;
         if (temFrete) theadHTML += `<th style="width: 10%;">[Frete]</th>`;
         theadHTML += `
-                <th style="width: 11%;">[B]</th>
+                <th style="width: 10%;">[B]</th>
                 <th style="width: 12%;">${temFrete ? '[C]= [B]-[A]-[Frete]' : '[C]= [B]-[A]'}</th>
-                <th style="width: 12%;">[D]= [C]/[B]</th>
-                <th style="width: 13%;">[E]=[D]-[D] Per. Base</th>
+                <th style="width: 11%;">[D]= [C]/[B]</th>
+                <th style="width: 12%;">[E]=[D]-[D] Per. Base</th>
                 <th rowspan="2" style="width: 5%;">% DE REAJUSTE</th>
+        `;
+
+        if (temLitros) theadHTML += `<th rowspan="2" class="${clsLitrosPrint}" style="width: 7%;">QTD LITROS</th>`;
+        if (showQtdLitros) theadHTML += `<th rowspan="2" style="width: 10%; color: var(--primary-color);">LUCRO ESTIMADO P/<br>QTD LITROS</th>`;
+        if (showQtdLitros && showComparar) theadHTML += `<th rowspan="2" style="width: 10%;">COMPARAÇÃO<br>DE PERÍODO</th>`;
+        
+        theadHTML += `
                 <th rowspan="2" class="no-print" style="width: 5px; border: none; background: transparent;"></th>
             </tr>
             <tr>
@@ -616,63 +778,127 @@
         theadHTML += `
                 <th>PREÇO DE VENDA<br>(R$/UNID.)</th>
                 <th>MARGEM DE LUCRO BRUTA<br>ESTIMADA (R$/UNID.)</th>
-                <th>MARGEM DE LUCRO BRUTA<br>ESTIMADA (%)<br>ML=( PV-PC)/PV x(100)</th>
-                <th>AUMENTO OU REDUÇÃO DA<br>MARGEM (%) EM RELAÇÃO AO<br>PRIMEIRO PERÍODO DE CADA<br>PRODUTO</th>
+                <th>MARGEM DE LUCRO BRUTA<br>ESTIMADA (%)</th>
+                <th>AUMENTO OU REDUÇÃO DA<br>MARGEM (%)</th>
             </tr>
         `;
         sheetTableHead.innerHTML = theadHTML;
 
         if(bancoDados.length === 0) {
-            const colsCount = temFrete ? 10 : 9;
-            sheetTableBody.innerHTML = `<tr><td colspan="${colsCount}" style="text-align:center; color:#999; padding:20px;">Nenhum produto lançado. Use os painéis acima para começar.</td></tr>`;
+            sheetTableBody.innerHTML = `<tr><td colspan="${totalColunas}" style="text-align:center; color:#999; padding:20px;">Nenhum produto lançado. Use os painéis acima para começar.</td></tr>`;
             return;
         }
 
-        // Funções adaptadas para retornar "-" caso o campo esteja vazio
-        const fMoeda = (v, vazia) => vazia ? '-' : 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-        const fMoeda2 = (v, vazia) => vazia ? '-' : 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const fPct = (v) => (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
-        const fPctE = (v) => {
-            const sinal = v > 0 ? '+' : '';
-            return sinal + (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        const fMoeda = (v, vazia) => vazia ? '-' : 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+        const fMoeda2 = (v, vazia) => vazia ? '-' : 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fPct = (v, vazia) => vazia ? '-' : ((Number(v) || 0) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        const fPctE = (v, vazia) => {
+            if (vazia) return '-';
+            let num = Number(v) || 0;
+            const sinal = num > 0 ? '+' : '';
+            return sinal + (num * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
         };
 
-        bancoDados.forEach(prod => {
+        bancoDados.forEach((prod) => {
             if (prod.linhas.length >= 0) {
+                let selectHtml = '';
+                if (showQtdLitros && showComparar && prod.linhas.length > 0) {
+                    const nomeSafe = prod.nome.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    selectHtml = `<select class="select-compare no-print" onchange="setPeriodoComparacao('${nomeSafe}', this.value)">
+                        <option value="">-- Período para comparar --</option>
+                        ${prod.linhas.map(l => `<option value="${l.periodo}" ${prod.periodoComparacao === l.periodo ? 'selected' : ''}>Base: ${l.periodo}</option>`).join('')}
+                    </select>`;
+                }
                 const rowHeader = document.createElement('tr');
                 rowHeader.className = "product-header-row";
-                const colspanHeader = temFrete ? 9 : 8;
-                rowHeader.innerHTML = `<td colspan="${colspanHeader}"><b>${prod.nome}</b></td><td class="no-print actions-cell"></td>`;
+                rowHeader.innerHTML = `<td colspan="${colspanProduto}"><b>${prod.nome}</b> ${selectHtml}</td><td class="no-print actions-cell"></td>`;
                 sheetTableBody.appendChild(rowHeader);
             }
 
+            let minC = Infinity, maxC = -Infinity, minD = Infinity, maxD = -Infinity;
+            if (showIndicador) {
+                prod.linhas.forEach(l => {
+                    const isVazia = (l.isAquisicaoVazia === true || l.isVendaVazia === true);
+                    if (!isVazia) {
+                        let lc = Number(l.lucroBrutoC) || 0;
+                        let md = Number(l.margemD) || 0;
+                        if (lc < minC) minC = lc;
+                        if (lc > maxC) maxC = lc;
+                        if (md < minD) minD = md;
+                        if (md > maxD) maxD = md;
+                    }
+                });
+            }
+
+            let baseRow = null;
+            if (showQtdLitros && showComparar && prod.periodoComparacao) {
+                baseRow = prod.linhas.find(l => l.periodo === prod.periodoComparacao);
+            }
+
+            let sumQtdLitros = 0;
+            let sumLucroTotal = 0;
+            let sumDiff = 0;
+
             prod.linhas.forEach(lin => {
                 const tr = document.createElement('tr');
-                
-                // Adiciona o destaque vermelho claro caso a aquisição ou venda estejam vazias
-                if (lin.isAquisicaoVazia || lin.isVendaVazia) {
-                    tr.classList.add('linha-incompleta');
+                const isVazia = (lin.isAquisicaoVazia === true || lin.isVendaVazia === true);
+                if (isVazia) tr.classList.add('linha-incompleta');
+
+                let lc = Number(lin.lucroBrutoC) || 0;
+                let md = Number(lin.margemD) || 0;
+
+                let styleC = '', styleD = '';
+                if (showIndicador && !isVazia) {
+                    styleC = getGradientStyle(lc, minC, maxC);
+                    styleD = getGradientStyle(md, minD, maxD);
                 }
 
-                let colCorE = 'black';
-                if (lin.aumentoReducaoE > 0) colCorE = 'green';
-                if (lin.aumentoReducaoE < 0) colCorE = 'red';
-
+                let aumE = Number(lin.aumentoReducaoE) || 0;
+                let colCorE = aumE > 0 ? 'green' : (aumE < 0 ? 'red' : 'black');
                 let tdFrete = temFrete ? `<td>${lin.frete > 0 ? fMoeda(lin.frete, false) : '-'}</td>` : '';
+                
+                let qLitros = Number(lin.qtdLitros) || 0;
+                sumQtdLitros += qLitros;
+
+                let tdLitrosHtml = temLitros ? `<td class="${clsLitrosPrint}">${qLitros > 0 ? qLitros.toLocaleString('pt-BR') : '-'}</td>` : '';
+                
+                let tdQtd = '', tdComp = '';
+                if (showQtdLitros) {
+                    let lucroTotal = isVazia ? 0 : (qLitros * lc);
+                    if (!isVazia) sumLucroTotal += lucroTotal;
+                    tdQtd = `<td style="font-weight: 500;">${(isVazia || qLitros === 0) ? '-' : fMoeda2(lucroTotal, false)}</td>`;
+                }
+
+                if (showQtdLitros && showComparar) {
+                    if (isVazia || !baseRow || qLitros === 0) {
+                        tdComp = `<td>-</td>`;
+                    } else {
+                        let lucroAtual = qLitros * lc;
+                        let baseLucroAbsoluto = (Number(baseRow.qtdLitros)||0) * (Number(baseRow.lucroBrutoC)||0);
+                        let diff = lucroAtual - baseLucroAbsoluto;
+                        sumDiff += diff;
+                        let corDiff = diff > 0 ? 'green' : (diff < 0 ? 'red' : 'black');
+                        let sinal = diff > 0 ? '+' : '';
+                        tdComp = `<td style="color: ${corDiff}; font-weight: bold;">${sinal}${fMoeda2(diff, false)}</td>`;
+                    }
+                }
 
                 tr.innerHTML = `
-                    <td>${lin.docId}</td>
-                    <td>${lin.periodo}</td>
+                    <td>${lin.docId || ''}</td>
+                    <td>${lin.periodo || ''}</td>
                     <td>${fMoeda(lin.aquisicao, lin.isAquisicaoVazia)}</td>
                     ${tdFrete}
                     <td>${fMoeda2(lin.venda, lin.isVendaVazia)}</td>
-                    <td>${fMoeda(lin.lucroBrutoC, false)}</td>
-                    <td>${fPct(lin.margemD)}</td>
-                    <td style="color: ${colCorE}; font-weight: ${colCorE !== 'black' ? 'bold' : 'normal'}">${fPctE(lin.aumentoReducaoE)}</td>
-                    <td>${fPct(lin.percentualReajuste)}</td>
+                    <td style="${styleC}">${fMoeda(lc, isVazia)}</td>
+                    <td style="${styleD}">${fPct(md, isVazia)}</td>
+                    <td style="color: ${colCorE}; font-weight: ${colCorE !== 'black' ? 'bold' : 'normal'}">${fPctE(aumE, isVazia)}</td>
+                    <td>${fPct(lin.percentualReajuste, isVazia)}</td>
+                    ${tdLitrosHtml}
+                    ${tdQtd}
+                    ${tdComp}
                     <td class="no-print actions-cell">
-                        <button type="button" class="btn-edit" style="padding:2px 6px; font-size:0.8em; margin-right:4px;" onclick="editarLinha('${prod.nome}', ${lin.id})">✏️</button>
-                        <button type="button" class="btn-danger" style="padding:2px 6px; font-size:0.8em;" onclick="removerLinha('${prod.nome}', ${lin.id})">X</button>
+                        <button type="button" class="btn-edit" style="padding:2px 6px; font-size:0.8em; margin-right:4px;" onclick="editarLinha(${lin.id})">✏️</button>
+                        <button type="button" class="btn-danger" style="padding:2px 6px; font-size:0.8em;" onclick="removerLinha(${lin.id})">X</button>
                     </td>
                 `;
                 sheetTableBody.appendChild(tr);
@@ -680,28 +906,42 @@
 
             if (prod.linhas.length > 0) {
                 const qtd = prod.linhas.length;
-                const avgAquisicao = prod.linhas.reduce((acc, l) => acc + l.aquisicao, 0) / qtd;
-                const avgFrete = prod.linhas.reduce((acc, l) => acc + l.frete, 0) / qtd;
-                const avgVenda = prod.linhas.reduce((acc, l) => acc + l.venda, 0) / qtd;
-                const avgC = prod.linhas.reduce((acc, l) => acc + l.lucroBrutoC, 0) / qtd;
-                const avgD = prod.linhas.reduce((acc, l) => acc + l.margemD, 0) / qtd;
-                const avgE = prod.linhas.reduce((acc, l) => acc + l.aumentoReducaoE, 0) / qtd;
-                const avgReajuste = prod.linhas.reduce((acc, l) => acc + l.percentualReajuste, 0) / qtd;
+                const avgAquisicao = prod.linhas.reduce((acc, l) => acc + (Number(l.aquisicao)||0), 0) / qtd;
+                const avgFrete = prod.linhas.reduce((acc, l) => acc + (Number(l.frete)||0), 0) / qtd;
+                const avgVenda = prod.linhas.reduce((acc, l) => acc + (Number(l.venda)||0), 0) / qtd;
+                const avgC = prod.linhas.reduce((acc, l) => acc + (Number(l.lucroBrutoC)||0), 0) / qtd;
+                const avgD = prod.linhas.reduce((acc, l) => acc + (Number(l.margemD)||0), 0) / qtd;
+                const avgE = prod.linhas.reduce((acc, l) => acc + (Number(l.aumentoReducaoE)||0), 0) / qtd;
+                const avgReajuste = prod.linhas.reduce((acc, l) => acc + (Number(l.percentualReajuste)||0), 0) / qtd;
 
                 const trMedia = document.createElement('tr');
                 trMedia.className = 'media-row';
                 let tdFreteMedia = temFrete ? `<td>${avgFrete > 0 ? fMoeda(avgFrete, false) : '-'}</td>` : '';
+                let tdLitrosMedia = temLitros ? `<td class="${clsLitrosPrint}">${sumQtdLitros > 0 ? sumQtdLitros.toLocaleString('pt-BR') : '-'}</td>` : '';
                 
+                let tdQtdMedia = '', tdCompMedia = '';
+                if (showQtdLitros) {
+                    tdQtdMedia = `<td style="color: var(--primary-color);"><b>Σ TOTAL:</b><br>${fMoeda2(sumLucroTotal, false)}</td>`;
+                }
+                if (showQtdLitros && showComparar) {
+                    let corDiff = sumDiff > 0 ? 'green' : (sumDiff < 0 ? 'red' : 'black');
+                    let sinal = sumDiff > 0 ? '+' : '';
+                    tdCompMedia = `<td style="color: ${corDiff};"><b>Σ DIF:</b><br>${sinal}${fMoeda2(sumDiff, false)}</td>`;
+                }
+
                 trMedia.innerHTML = `
-                    <td>MÉDIA PRODUTO</td>
+                    <td>MÉDIA / TOTAIS</td>
                     <td></td>
                     <td>${fMoeda(avgAquisicao, false)}</td>
                     ${tdFreteMedia}
                     <td>${fMoeda2(avgVenda, false)}</td>
                     <td>${fMoeda(avgC, false)}</td>
-                    <td>${fPct(avgD)}</td>
-                    <td style="color: ${avgE < 0 ? 'red' : (avgE > 0 ? 'green' : 'black')}">${fPctE(avgE)}</td>
-                    <td>${fPct(avgReajuste)}</td>
+                    <td>${fPct(avgD, false)}</td>
+                    <td style="color: ${avgE < 0 ? 'red' : (avgE > 0 ? 'green' : 'black')}">${fPctE(avgE, false)}</td>
+                    <td>${fPct(avgReajuste, false)}</td>
+                    ${tdLitrosMedia}
+                    ${tdQtdMedia}
+                    ${tdCompMedia}
                     <td class="no-print actions-cell"></td>
                 `;
                 sheetTableBody.appendChild(trMedia);
@@ -709,7 +949,156 @@
         });
     }
 
+    // -------------------------------------------------------------------------
+    // RELATÓRIOS E BACKUP (SALVAR/IMPORTAR)
+    // -------------------------------------------------------------------------
+    function gerarRelatorio() {
+        if(bancoDados.length === 0) return alert("Não há dados cadastrados para gerar o relatório.");
+
+        let tipoStr = prompt("Digite 'M' para relatório MENSAL ou 'S' para relatório SEMANAL:");
+        if(!tipoStr) return;
+        let tipo = tipoStr.trim().toUpperCase();
+        if(tipo !== 'M' && tipo !== 'S') return alert("Opção inválida. Operação cancelada.");
+
+        let relatorioDados = {};
+        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        bancoDados.forEach(prod => {
+            if(!Array.isArray(prod.linhas)) return;
+            prod.linhas.forEach(l => {
+                if(l.isAquisicaoVazia || l.isVendaVazia || !(Number(l.qtdLitros) > 0)) return;
+                
+                let dateStr = l.periodo || ''; 
+                if(!dateStr.includes('/')) return;
+                let parts = dateStr.split('/');
+                if(parts.length !== 3) return;
+
+                let d = new Date(parts[2], parts[1]-1, parts[0]);
+                if(isNaN(d.getFullYear())) return;
+
+                let key = "";
+                let labelFormated = "";
+
+                if(tipo === 'M') {
+                    // YYYY-MM para ordenação alfabética invisível perfeita
+                    key = `${parts[2]}-${parts[1]}`;
+                    labelFormated = `${parts[1]}/${parts[2]}`;
+                } else {
+                    // Semana baseada no MÊS: Dia 1 ao 7 = Sem 1; 8 ao 14 = Sem 2, etc.
+                    let diaMes = d.getDate();
+                    let semanaMes = Math.ceil(diaMes / 7);
+                    let nomeMes = mesesNomes[d.getMonth()];
+                    let anoStr = d.getFullYear();
+                    
+                    key = `${anoStr}-${String(d.getMonth() + 1).padStart(2, '0')}-W${semanaMes}`;
+                    labelFormated = `Semana ${semanaMes} de ${nomeMes} de ${anoStr}`;
+                }
+
+                if(!relatorioDados[key]) {
+                    relatorioDados[key] = { label: labelFormated, produtos: {} };
+                }
+                if(!relatorioDados[key].produtos[prod.nome]) {
+                    relatorioDados[key].produtos[prod.nome] = { litros: 0, lucro: 0 };
+                }
+                
+                let qLitros = Number(l.qtdLitros);
+                let luc = Number(l.lucroBrutoC);
+                relatorioDados[key].produtos[prod.nome].litros += qLitros;
+                relatorioDados[key].produtos[prod.nome].lucro += (qLitros * luc);
+            });
+        });
+
+        if(Object.keys(relatorioDados).length === 0) {
+            return alert("Nenhum lançamento com 'Quant. Litros' foi encontrado para gerar o relatório.");
+        }
+
+        let titulo = tipo === 'M' ? "Relatório Mensal de Lucros Estimados" : "Relatório Semanal de Lucros Estimados";
+        let inNotificacao = document.getElementById('notificacaoNum');
+        let nomeNotificacao = inNotificacao ? inNotificacao.value : "-";
+
+        let html = `
+        <html>
+        <head>
+            <title>${titulo}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #333; }
+                h2 { color: #1f4e78; border-bottom: 2px solid #1f4e78; padding-bottom: 5px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+                th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+                th { background-color: #f2f2f2; color: #1f4e78; }
+                .total-row { background-color: #e8f4f8; font-weight: bold; }
+                @media print { button { display: none; } }
+            </style>
+        </head>
+        <body>
+            <h2>${titulo}</h2>
+            <p><b>Notificação n°:</b> ${nomeNotificacao}</p>
+            <button onclick="window.print()" style="padding: 10px 15px; background: #1f4e78; color: white; border: none; cursor:pointer; border-radius: 4px; font-weight: bold;">🖨️ Imprimir Relatório</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Período</th>
+                        <th>Produto</th>
+                        <th>Total de Litros</th>
+                        <th>Lucro Estimado (R$)</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let totalGeralLucro = 0;
+        let periodosOrd = Object.keys(relatorioDados).sort(); 
+
+        periodosOrd.forEach(perKey => {
+            let labelPer = relatorioDados[perKey].label;
+            let prodsObj = relatorioDados[perKey].produtos;
+            let produtosNoPeriodo = Object.keys(prodsObj).sort();
+            let subTotalPeriodo = 0;
+            
+            produtosNoPeriodo.forEach((prodName, idx) => {
+                let dados = prodsObj[prodName];
+                subTotalPeriodo += dados.lucro;
+                
+                html += `<tr>`;
+                if(idx === 0) {
+                    html += `<td rowspan="${produtosNoPeriodo.length}" style="vertical-align:middle; font-weight:bold; background:#fdfdfd;">${labelPer}</td>`;
+                }
+                html += `
+                    <td>${prodName}</td>
+                    <td>${dados.litros.toLocaleString('pt-BR')} L</td>
+                    <td>R$ ${dados.lucro.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>`;
+            });
+            
+            totalGeralLucro += subTotalPeriodo;
+            html += `<tr class="total-row">
+                <td colspan="3" style="text-align: right;"><b>Subtotal (${labelPer}):</b></td>
+                <td>R$ ${subTotalPeriodo.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            </tr>`;
+        });
+
+        html += `
+                </tbody>
+                <tfoot>
+                    <tr style="background:#1f4e78; color:white; font-size: 1.1em;">
+                        <td colspan="3" style="text-align: right;"><b>LUCRO TOTAL GERAL:</b></td>
+                        <td><b>R$ ${totalGeralLucro.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </body>
+        </html>`;
+
+        let janela = window.open('', '_blank');
+        janela.document.write(html);
+        janela.document.close();
+    }
+
     function salvarDados() {
+        const chkInd = document.getElementById('chkIndicador');
+        const chkQtd = document.getElementById('chkQtdLitros');
+        const chkCmp = document.getElementById('chkComparar');
+
         const pacoteBackup = {
             notificacao: notificacaoInput.value,
             razaoSocial: document.getElementById('razaoSocial').value,
@@ -717,7 +1106,12 @@
             endereco: document.getElementById('endereco').value,
             contato: document.getElementById('contato').value,
             produtoHeader: document.getElementById('produtoHeader').value,
-            bancoDados: bancoDados
+            bancoDados: bancoDados,
+            configs: {
+                indicador: chkInd ? chkInd.checked : false,
+                qtdLitrosCheck: chkQtd ? chkQtd.checked : false,
+                compararCheck: chkCmp ? chkCmp.checked : false
+            }
         };
 
         const jsonString = JSON.stringify(pacoteBackup, null, 2);
@@ -725,10 +1119,11 @@
         const url = URL.createObjectURL(blob);
         
         const dlAnchorElem = document.createElement('a');
-        const numNotif = pacoteBackup.notificacao.replace(/[^a-zA-Z0-9]/g, "_");
+        let txtNotif = pacoteBackup.notificacao || 'Combustivel';
+        let numNotif = txtNotif.replace(/[^a-zA-Z0-9]/g, "_");
         
         dlAnchorElem.href = url;
-        dlAnchorElem.download = `Planilha_Notificacao_${numNotif || 'Combustivel'}.json`;
+        dlAnchorElem.download = `Planilha_Notificacao_${numNotif}.json`;
         
         document.body.appendChild(dlAnchorElem);
         dlAnchorElem.click();
@@ -760,19 +1155,42 @@
                     document.getElementById('produtoHeader').value = dados.produtoHeader || '';
                     
                     bancoDados = dados.bancoDados;
+
+                    // Varredura de segurança para dados antigos (Converte possíveis nulos em zero)
+                    bancoDados.forEach(p => {
+                        if(!p.periodoComparacao) p.periodoComparacao = '';
+                        if(!p.linhas) p.linhas = [];
+                        p.linhas.forEach(l => {
+                            l.qtdLitros = Number(l.qtdLitros) || 0;
+                            l.aquisicao = Number(l.aquisicao) || 0;
+                            l.venda = Number(l.venda) || 0;
+                            l.frete = Number(l.frete) || 0;
+                        });
+                    });
+
+                    if(dados.configs) {
+                        document.getElementById('chkIndicador').checked = dados.configs.indicador || false;
+                        document.getElementById('chkQtdLitros').checked = dados.configs.qtdLitrosCheck || false;
+                        document.getElementById('chkComparar').checked = dados.configs.compararCheck || false;
+                    } else {
+                        document.getElementById('chkIndicador').checked = false;
+                        document.getElementById('chkQtdLitros').checked = false;
+                        document.getElementById('chkComparar').checked = false;
+                    }
                     
                     atualizarDropdown();
                     atualizarTabela();
-                    alert('Planilha carregada e restaurada com sucesso!');
+                    alert('Planilha carregada com sucesso!');
                 } else {
                     alert('Arquivo inválido ou em formato incorreto.');
                 }
             } catch (err) {
-                alert('Erro ao processar e ler o arquivo JSON de backup.');
+                alert('Erro ao processar o arquivo. Estrutura incompatível.');
+            } finally {
+                input.value = '';
             }
         };
         reader.readAsText(file);
-        input.value = '';
     }
 
     function limparTudo() {
@@ -784,6 +1202,7 @@
         }
     }
 
+    // Inicialização da tela na abertura
     atualizarTabela();
 </script>
 
