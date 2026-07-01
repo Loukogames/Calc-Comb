@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Documentos - Posto de Combustível</title>
     
-    <!-- Biblioteca de Criptografia AES -->
+    <!-- Biblioteca de Criptografia AES (Para Proteção de Senha) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <style>
@@ -75,7 +75,7 @@
         .form-table-grid td:first-child { padding-left: 0; }
         .form-table-grid td:last-child { padding-right: 0; }
         
-        /* Botões */
+        /* Botões e Toolbar com Flexbox para não quebrar online */
         button { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: opacity 0.2s; }
         button:hover { opacity: 0.85; }
         .btn-danger { background-color: #c0392b; }
@@ -84,7 +84,6 @@
         .btn-edit-mode { background-color: #f39c12 !important; color: #fff !important; }
         .btn-report { background-color: #8e44ad; color: #fff; }
         
-        /* FIX DA BARRA DE BOTÕES PARA O GITHUB PAGES (Flexbox) */
         .toolbar { 
             display: flex; 
             justify-content: flex-end; 
@@ -247,7 +246,6 @@
         </label>
     </div>
 
-    <!-- BARRA DE BOTÕES CORRIGIDA -->
     <div class="toolbar no-print">
         <button type="button" class="btn-report" onclick="gerarRelatorio()">📊 Gerar Relatório</button>
         <button type="button" class="btn-success" onclick="salvarDados()">💾 Salvar Planilha</button>
@@ -508,7 +506,7 @@
             }
         });
 
-        // Oculta "QTD LITROS" da impressão caso a caixa de Calcular não esteja marcada
+        // Ocultar a coluna QTD LITROS na impressão caso não se deseje calcular lucro
         const clsLitrosPrint = showQtdLitros ? "" : "no-print";
 
         // Contagem de Colunas
@@ -700,8 +698,11 @@
                     tdCompMedia = `<td style="color: ${corDiff};"><b>Σ DIF:</b><br>${sinal}${fMoeda2(sumDiff, false)}</td>`;
                 }
 
+                // Troca Média ou Média/Totais com base no checkbox
+                let textMedia = showQtdLitros ? "MÉDIA / TOTAIS" : "MÉDIA";
+
                 trMedia.innerHTML = `
-                    <td>MÉDIA / TOTAIS</td>
+                    <td>${textMedia}</td>
                     <td></td>
                     <td>${fMoeda(avgAquisicao, false)}</td>
                     ${tdFreteMedia}
