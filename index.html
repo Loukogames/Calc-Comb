@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Documentos - Posto de Combustível</title>
     
-    <!-- Biblioteca de Criptografia AES (Para Proteção de Senha) -->
+    <!-- Biblioteca de Criptografia AES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Biblioteca de Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
     <style>
         :root {
@@ -75,7 +77,7 @@
         .form-table-grid td:first-child { padding-left: 0; }
         .form-table-grid td:last-child { padding-right: 0; }
         
-        /* Botões e Toolbar com Flexbox para não quebrar online */
+        /* Botões */
         button { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: opacity 0.2s; }
         button:hover { opacity: 0.85; }
         .btn-danger { background-color: #c0392b; }
@@ -83,14 +85,12 @@
         .btn-edit { background-color: #f39c12; color: #fff; }
         .btn-edit-mode { background-color: #f39c12 !important; color: #fff !important; }
         .btn-report { background-color: #8e44ad; color: #fff; }
+        .btn-ai { background-color: #008080; color: #fff; }
+        .btn-copy { background-color: #34495e; color: #fff; }
         
         .toolbar { 
-            display: flex; 
-            justify-content: flex-end; 
-            align-items: center;
-            gap: 10px; 
-            flex-wrap: wrap;
-            margin-bottom: 15px; 
+            display: flex; justify-content: flex-end; align-items: center;
+            gap: 10px; flex-wrap: wrap; margin-bottom: 15px; 
         }
 
         /* Painel de Opções Adicionais */
@@ -109,10 +109,65 @@
         table.main-sheet-table tr.product-header-row td { background-color: var(--row-group-bg); text-align: left !important; font-weight: bold; font-size: 1.05em; letter-spacing: 0.5px; padding-left: 10px !important; }
         
         .linha-incompleta { background-color: #ffe6e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .linha-selecionada td { background-color: #d0e8ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .media-row { background-color: #fdfdfd; font-weight: bold; }
         .media-row td { border-top: 2px solid #555; border-bottom: 2px solid #555; }
         .actions-cell { border: none !important; background: transparent !important; white-space: nowrap; }
+
+        /* Gráficos de Evolução */
+        #graficosContainer {
+            margin-top: 30px;
+            border-top: 3px solid var(--primary-color);
+            padding-top: 20px;
+        }
+        #graficosContainer h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .grafico-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .grafico-titulo {
+            margin: 0 0 15px 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+            font-size: 1.05em;
+        }
+        .grafico-canvas-wrapper {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .grafico-sem-dados {
+            text-align: center;
+            color: #999;
+            padding: 15px;
+            font-style: italic;
+        }
         
+        /* Modal IA */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #fff; width: 80%; max-width: 900px; padding: 25px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column;
+        }
+        .modal-content h3 { margin-top: 0; color: var(--primary-color); display: flex; justify-content: space-between; }
+        .modal-content textarea { width: 100%; height: 400px; padding: 10px; margin-top: 15px; border: 1px solid #ccc; font-family: Arial, sans-serif; font-size: 14px; box-sizing: border-box; resize: vertical; }
+
         @media print {
             @page { margin: 15mm 10mm; }
             body { background: white; padding: 0; }
@@ -126,7 +181,12 @@
             table.main-sheet-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             table.main-sheet-table tr.product-header-row td { background-color: #e5e5e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .media-row td { border-top: 2px solid #000; border-bottom: 2px solid #000; }
-            .linha-incompleta { background-color: #ffe6e6 !important; }
+            .linha-selecionada td { background-color: transparent !important; }
+
+            /* Gráficos na impressão */
+            #graficosContainer { border-top: 2px solid #000; page-break-before: always; }
+            .grafico-card { box-shadow: none; border: 1px solid #999; }
+            .grafico-canvas-wrapper { height: 280px !important; }
         }
     </style>
 </head>
@@ -136,14 +196,14 @@
     <div class="sheet-header">
         <table class="header-table">
             <tr>
-                <td class="header-img-left"><img src="image 01.png" alt="Logo Esquerda" class="header-img"></td>
+                <td class="header-img-left"></td>
                 <td class="header-title-cell">
                     <h2>Análise de Documentos Relativo a Notificação</h2>
                     <div style="margin-top: 8px; font-size: 1.1em; font-weight: bold; color: var(--primary-color);">
                         n° <span id="notificacaoNumSpan" class="print-notificacao"></span><input type="text" id="notificacaoNum" class="notificacao-input no-print" placeholder="Ex: 423/2026">
                     </div>
                 </td>
-                <td class="header-img-right"><img src="image 02.png" alt="Logo Direita" class="header-img"></td>
+                <td class="header-img-right"></td>
             </tr>
         </table>
         <h3>Dados do Estabelecimento Comercial</h3>
@@ -192,7 +252,7 @@
                         <table class="form-table-grid" style="margin-bottom: 10px;">
                             <tr>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group"><label>Nº Doc / NF (Coluna 1)</label><input type="text" id="docId" required></div>
+                                    <div class="form-group"><label>Nº Doc / NF (Coluna 1) [Opcional]</label><input type="text" id="docId"></div>
                                 </td>
                                 <td style="width: 33.33%;">
                                     <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="periodo" placeholder="Ex: 02/02/2026" required></div>
@@ -227,26 +287,34 @@
         </div>
     </div>
 
-    <!-- Painel de Opções Adicionais -->
+    <!-- Painel de Opções Adicionais e IA -->
     <div class="options-panel no-print">
         <label title="Aplica cores verde/vermelho indicando as maiores/menores margens.">
-            <input type="checkbox" id="chkIndicador" onchange="atualizarTabela()"> 🎨 Indicador de Margem (Degradê)
+            <input type="checkbox" id="chkIndicador" onchange="atualizarTabela()"> 🎨 Indicador de Margem
         </label>
-        
         <div class="panel-divider"></div>
-        
         <label title="Ativa a coluna que multiplica os Litros lançados pela Margem Bruta (Lucro).">
-            <input type="checkbox" id="chkQtdLitros" onchange="toggleQtdLitros()"> ⛽ Calcular Lucro p/ Litros
+            <input type="checkbox" id="chkQtdLitros" onchange="toggleQtdLitros()"> ⛽ Calcular Lucro
         </label>
-
         <div class="panel-divider"></div>
-
         <label title="Habilita a seleção de um período base no cabeçalho de cada produto para calcular a diferença de lucro.">
             <input type="checkbox" id="chkComparar" onchange="toggleComparar()"> ⚖️ Comparar Período
         </label>
+        <div class="panel-divider"></div>
+        <label title="Exibe, abaixo da planilha, gráficos de evolução (Aquisição, Venda, Margem R$ e Margem %) para cada produto cadastrado.">
+            <input type="checkbox" id="chkGraficos" onchange="toggleGraficos()"> 📈 Exibir Gráficos
+        </label>
+        <label id="printGraficosOption" title="Inclui os gráficos exibidos junto com a planilha ao imprimir." style="display:none;">
+            <input type="checkbox" id="chkImprimirGraficos" onchange="toggleImprimirGraficos()"> 🖨️ Incluir na Impressão
+        </label>
+        
+        <div style="flex-grow: 1; text-align: right;">
+            <input type="password" id="geminiApiKey" placeholder="Chave de API Gemini" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+        </div>
     </div>
 
     <div class="toolbar no-print">
+        <button type="button" class="btn-ai" onclick="abrirModalIA()">🤖 Analisar c/ IA</button>
         <button type="button" class="btn-report" onclick="gerarRelatorio()">📊 Gerar Relatório</button>
         <button type="button" class="btn-success" onclick="salvarDados()">💾 Salvar Planilha</button>
         <button type="button" class="btn-edit" onclick="acionarImportacao()">📂 Importar Planilha</button>
@@ -259,6 +327,33 @@
         <thead id="sheetTableHead"></thead>
         <tbody id="sheetTableBody"></tbody>
     </table>
+
+    <!-- Área de Gráficos de Evolução (oculta por padrão) -->
+    <div id="graficosContainer" class="no-print" style="display:none;">
+        <h3>📊 Gráficos de Evolução de Preços e Margens por Produto</h3>
+        <div id="graficosContent"></div>
+    </div>
+</div>
+
+<!-- Modal IA -->
+<div class="modal-overlay" id="modalIA">
+    <div class="modal-content">
+        <h3>
+            Geração de Auto de Infração - IA
+            <button class="btn-danger" style="padding: 4px 10px;" onclick="fecharModalIA()">X</button>
+        </h3>
+        <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #555;">
+            Os dados selecionados na tabela em <b>azul</b> serão enviados para o Gemini. Certifique-se de ter escolhido um período como <b>Base</b> para cada produto que deseja analisar.
+        </p>
+        
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="btn-success" onclick="gerarTextoIA()" id="btnGerarIA">✨ Gerar Texto</button>
+            <button class="btn-copy" onclick="copiarTextoIA()" id="btnCopiarIA" style="display:none;">📋 Copiar Texto</button>
+            <span id="loadingIA" style="display:none; color: var(--primary-color); font-weight: bold;">Processando com IA... Aguarde.</span>
+        </div>
+
+        <textarea id="textoResultadoIA" placeholder="O resultado gerado pela inteligência artificial aparecerá aqui..."></textarea>
+    </div>
 </div>
 
 <script>
@@ -267,6 +362,7 @@
     // -------------------------------------------------------------------------
     let bancoDados = [];
     let editandoInfo = null;
+    let chartInstances = {};
 
     const productForm = document.getElementById('productForm');
     const entryForm = document.getElementById('entryForm');
@@ -276,25 +372,18 @@
     const notificacaoInput = document.getElementById('notificacaoNum');
     const notificacaoSpan = document.getElementById('notificacaoNumSpan');
 
-    // Sincroniza número da notificação
     notificacaoInput.addEventListener('input', function() {
         notificacaoSpan.textContent = this.value;
     });
 
-    // -------------------------------------------------------------------------
-    // FUNÇÕES DE LÓGICA E CÁLCULO GERAL
-    // -------------------------------------------------------------------------
+    // Lógicas e Cálculos mantidos originais
     function toggleComparar() {
-        if (document.getElementById('chkComparar').checked) {
-            document.getElementById('chkQtdLitros').checked = true;
-        }
+        if (document.getElementById('chkComparar').checked) document.getElementById('chkQtdLitros').checked = true;
         atualizarTabela();
     }
     
     function toggleQtdLitros() {
-        if (!document.getElementById('chkQtdLitros').checked) {
-            document.getElementById('chkComparar').checked = false; 
-        }
+        if (!document.getElementById('chkQtdLitros').checked) document.getElementById('chkComparar').checked = false; 
         atualizarTabela();
     }
 
@@ -307,23 +396,26 @@
 
     function setPeriodoComparacao(nomeProduto, periodo) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
-        if (prod) {
-            prod.periodoComparacao = periodo;
-            atualizarTabela();
-        }
+        if (prod) { prod.periodoComparacao = periodo; atualizarTabela(); }
     }
 
     function parseDate(str) {
         if (!str) return 0;
         if (str.includes('/')) {
             const parts = str.split('/');
-            if (parts.length === 3) {
-                return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-            }
+            if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
         } else if (str.includes('-')) {
             return new Date(str).getTime();
         }
         return 0;
+    }
+
+    function formatData(ts) {
+        let d = new Date(ts);
+        let dia = String(d.getDate()).padStart(2, '0');
+        let mes = String(d.getMonth() + 1).padStart(2, '0');
+        let ano = d.getFullYear();
+        return `${dia}/${mes}/${ano}`;
     }
 
     function recalcularProduto(nomeProduto) {
@@ -339,42 +431,28 @@
         });
     }
 
-    // -------------------------------------------------------------------------
-    // EVENTOS DOS FORMULÁRIOS (ADICIONAR E LANÇAR)
-    // -------------------------------------------------------------------------
+    // Eventos Form
     productForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const productName = document.getElementById('newProductName').value.trim().toUpperCase();
-        
-        if (bancoDados.some(p => p.nome === productName)) {
-            alert('Este produto já está cadastrado.');
-            return;
-        }
-
+        if (bancoDados.some(p => p.nome === productName)) { alert('Este produto já está cadastrado.'); return; }
         bancoDados.push({ nome: productName, linhas: [], periodoComparacao: '' });
-        atualizarDropdown();
-        atualizarTabela();
-        productForm.reset();
+        atualizarDropdown(); atualizarTabela(); productForm.reset();
     });
 
     entryForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const produtoSelecionado = selectProduct.value;
         const docId = document.getElementById('docId').value;
         const periodo = document.getElementById('periodo').value;
-        
         const aquisicaoStr = document.getElementById('aquisicao').value;
         const isAquisicaoVazia = (aquisicaoStr === '');
         const aquisicao = isAquisicaoVazia ? 0 : parseFloat(aquisicaoStr);
-        
         const vendaStr = document.getElementById('venda').value;
         const isVendaVazia = (vendaStr === '');
         const venda = isVendaVazia ? 0 : parseFloat(vendaStr);
-        
         const freteStr = document.getElementById('frete').value;
         const frete = (freteStr === '') ? 0 : parseFloat(freteStr);
-
         const qtdStr = document.getElementById('qtdLitros').value;
         const qtdLitros = (qtdStr === '') ? 0 : parseFloat(qtdStr);
 
@@ -397,20 +475,20 @@
             margemD: margemD,
             aumentoReducaoE: 0,
             percentualReajuste: 0,
-            qtdLitros: qtdLitros
+            qtdLitros: qtdLitros,
+            selecionado: false, 
+            isBaseIA: false     
         };
 
         if (editandoInfo) {
             const prodAntigo = bancoDados.find(p => p.nome === editandoInfo.nomeProduto);
             const idxAntigo = prodAntigo.linhas.findIndex(l => l.id === editandoInfo.idLinha);
-
             if (produtoSelecionado !== editandoInfo.nomeProduto) {
                 prodAntigo.linhas.splice(idxAntigo, 1);
                 produtoObj.linhas.push(novaLinha);
             } else {
                 prodAntigo.linhas[idxAntigo] = novaLinha;
             }
-            
             recalcularProduto(editandoInfo.nomeProduto);
             cancelarEdicao(false);
         } else {
@@ -419,19 +497,10 @@
 
         recalcularProduto(produtoSelecionado);
         atualizarTabela();
-        
-        document.getElementById('docId').value = '';
-        document.getElementById('periodo').value = '';
-        document.getElementById('aquisicao').value = '';
-        document.getElementById('frete').value = '';
-        document.getElementById('venda').value = '';
-        document.getElementById('qtdLitros').value = '';
+        document.getElementById('entryForm').reset();
         document.getElementById('docId').focus();
     });
 
-    // -------------------------------------------------------------------------
-    // EDIÇÃO E EXCLUSÃO
-    // -------------------------------------------------------------------------
     function editarLinha(nomeProduto, idLinha) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         const font_linha = prod.linhas.find(l => l.id === idLinha);
@@ -480,37 +549,227 @@
     }
 
     // -------------------------------------------------------------------------
-    // RENDERIZAÇÃO DA TABELA (MOTOR PRINCIPAL)
+    // LÓGICA DE SELEÇÃO IA
+    // -------------------------------------------------------------------------
+    function toggleSelecaoIA(nomeProduto, idLinha) {
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        const linha = prod.linhas.find(l => l.id === idLinha);
+        linha.selecionado = !linha.selecionado;
+        if (!linha.selecionado) linha.isBaseIA = false;
+        atualizarTabela();
+    }
+
+    function setBaseIA(nomeProduto, idLinha) {
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        prod.linhas.forEach(l => l.isBaseIA = false); 
+        const linha = prod.linhas.find(l => l.id === idLinha);
+        linha.isBaseIA = true;
+        linha.selecionado = true; 
+        atualizarTabela();
+    }
+
+    // -------------------------------------------------------------------------
+    // GRÁFICOS DE EVOLUÇÃO POR PRODUTO
+    // -------------------------------------------------------------------------
+    function toggleGraficos() {
+        const checked = document.getElementById('chkGraficos').checked;
+        const container = document.getElementById('graficosContainer');
+        const printOption = document.getElementById('printGraficosOption');
+        const chkImprimir = document.getElementById('chkImprimirGraficos');
+
+        if (checked) {
+            container.style.display = 'block';
+            printOption.style.display = 'flex';
+            renderGraficos();
+        } else {
+            container.style.display = 'none';
+            printOption.style.display = 'none';
+            chkImprimir.checked = false;
+            container.classList.add('no-print');
+            // Libera memória destruindo instâncias dos gráficos
+            Object.values(chartInstances).forEach(c => c.destroy());
+            chartInstances = {};
+        }
+    }
+
+    function toggleImprimirGraficos() {
+        const container = document.getElementById('graficosContainer');
+        if (document.getElementById('chkImprimirGraficos').checked) {
+            container.classList.remove('no-print');
+        } else {
+            container.classList.add('no-print');
+        }
+    }
+
+    function renderGraficos() {
+        const content = document.getElementById('graficosContent');
+        content.innerHTML = '';
+
+        // Destroi instâncias anteriores antes de recriar
+        Object.values(chartInstances).forEach(c => c.destroy());
+        chartInstances = {};
+
+        if (bancoDados.length === 0) {
+            content.innerHTML = '<p class="grafico-sem-dados">Nenhum produto cadastrado para exibir gráficos.</p>';
+            return;
+        }
+
+        let algumGrafico = false;
+
+        bancoDados.forEach((prod, idx) => {
+            const linhasValidas = (prod.linhas || []).filter(l => !l.isAquisicaoVazia && !l.isVendaVazia);
+            
+            const card = document.createElement('div');
+            card.className = 'grafico-card';
+
+            if (linhasValidas.length === 0) {
+                card.innerHTML = `
+                    <h4 class="grafico-titulo">${prod.nome}</h4>
+                    <p class="grafico-sem-dados">Não há lançamentos completos (Aquisição e Venda) para exibir a evolução deste produto.</p>
+                `;
+                content.appendChild(card);
+                return;
+            }
+
+            algumGrafico = true;
+            const linhasOrdenadas = [...linhasValidas].sort((a, b) => parseDate(a.periodo) - parseDate(b.periodo));
+            const canvasId = `chartProduto_${idx}`;
+
+            card.innerHTML = `
+                <h4 class="grafico-titulo">📈 ${prod.nome}</h4>
+                <div class="grafico-canvas-wrapper">
+                    <canvas id="${canvasId}"></canvas>
+                </div>
+            `;
+            content.appendChild(card);
+
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            const labels = linhasOrdenadas.map(l => l.periodo);
+            const dataAquisicao = linhasOrdenadas.map(l => Number(l.aquisicao) || 0);
+            const dataVenda = linhasOrdenadas.map(l => Number(l.venda) || 0);
+            const dataMargemRS = linhasOrdenadas.map(l => Number(l.lucroBrutoC) || 0);
+            const dataMargemPct = linhasOrdenadas.map(l => (Number(l.margemD) || 0) * 100);
+
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Preço de Aquisição (R$/Unid.)',
+                            data: dataAquisicao,
+                            borderColor: '#e67e22',
+                            backgroundColor: 'rgba(230, 126, 34, 0.15)',
+                            yAxisID: 'yMoeda',
+                            tension: 0.25,
+                            borderWidth: 2,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Preço de Venda (R$/Unid.)',
+                            data: dataVenda,
+                            borderColor: '#2980b9',
+                            backgroundColor: 'rgba(41, 128, 185, 0.15)',
+                            yAxisID: 'yMoeda',
+                            tension: 0.25,
+                            borderWidth: 2,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Margem de Lucro Bruta Estimada (R$/Unid.)',
+                            data: dataMargemRS,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.15)',
+                            yAxisID: 'yMoeda',
+                            tension: 0.25,
+                            borderWidth: 2,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Margem de Lucro Bruta Estimada (%)',
+                            data: dataMargemPct,
+                            borderColor: '#c0392b',
+                            backgroundColor: 'rgba(192, 57, 43, 0.15)',
+                            yAxisID: 'yPercent',
+                            tension: 0.25,
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (context.dataset.yAxisID === 'yPercent') {
+                                        return `${label}: ${value.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`;
+                                    }
+                                    return `${label}: R$ ${value.toLocaleString('pt-BR', {minimumFractionDigits: 4, maximumFractionDigits: 4})}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Período' }
+                        },
+                        yMoeda: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'R$ / Unid.' },
+                            ticks: {
+                                callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+                            }
+                        },
+                        yPercent: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Margem (%)' },
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: function(value) { return value.toLocaleString('pt-BR', {maximumFractionDigits: 1}) + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        if (!algumGrafico) {
+            content.innerHTML = '<p class="grafico-sem-dados">Nenhum produto possui lançamentos completos (Aquisição e Venda) para gerar gráficos.</p>';
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // RENDERIZAÇÃO DA TABELA
     // -------------------------------------------------------------------------
     function atualizarTabela() {
         sheetTableHead.innerHTML = '';
         sheetTableBody.innerHTML = '';
 
-        const chkInd = document.getElementById('chkIndicador');
-        const chkQtd = document.getElementById('chkQtdLitros');
-        const chkCmp = document.getElementById('chkComparar');
+        const showIndicador = document.getElementById('chkIndicador') ? document.getElementById('chkIndicador').checked : false;
+        const showQtdLitros = document.getElementById('chkQtdLitros') ? document.getElementById('chkQtdLitros').checked : false;
+        const showComparar = document.getElementById('chkComparar') ? document.getElementById('chkComparar').checked : false;
 
-        const showIndicador = chkInd ? chkInd.checked : false;
-        const showQtdLitros = chkQtd ? chkQtd.checked : false;
-        const showComparar = chkCmp ? chkCmp.checked : false;
-
-        let temFrete = false;
-        let temLitros = false;
-        
+        let temFrete = false, temLitros = false;
         bancoDados.forEach(p => {
-            if(p.linhas && Array.isArray(p.linhas)) {
-                p.linhas.forEach(l => { 
-                    if (l.frete > 0) temFrete = true; 
-                    if (l.qtdLitros && l.qtdLitros > 0) temLitros = true;
-                });
-            }
+            if(p.linhas) p.linhas.forEach(l => { 
+                if (l.frete > 0) temFrete = true; 
+                if (l.qtdLitros && l.qtdLitros > 0) temLitros = true;
+            });
         });
 
-        // Ocultar a coluna QTD LITROS na impressão caso não se deseje calcular lucro
         const clsLitrosPrint = showQtdLitros ? "" : "no-print";
-
-        // Contagem de Colunas
-        let totalColunas = 9; 
+        let totalColunas = 11;
         if (temFrete) totalColunas++;
         if (temLitros) totalColunas++;
         if (showQtdLitros) totalColunas++;
@@ -518,6 +777,8 @@
 
         let theadHTML = `
             <tr>
+                <th rowspan="2" class="no-print" style="width: 3%;" title="Selecionar para IA">Sel.</th>
+                <th rowspan="2" class="no-print" style="width: 3%;" title="Base para IA">Base</th>
                 <th rowspan="2" style="width: 12%;">DESCRIÇÃO DO PRODUTO</th>
                 <th rowspan="2" style="width: 14%;">PERÍODO<br>(1º P. COMPRA 2º P. VENDA)</th>
                 <th style="width: 10%;">[A]</th>
@@ -553,6 +814,7 @@
 
         if(bancoDados.length === 0) {
             sheetTableBody.innerHTML = `<tr><td colspan="${totalColunas}" style="text-align:center; color:#999; padding:20px;">Nenhum produto lançado. Use os painéis acima para começar.</td></tr>`;
+            if (document.getElementById('chkGraficos') && document.getElementById('chkGraficos').checked) renderGraficos();
             return;
         }
 
@@ -561,9 +823,7 @@
         const fPct = (v, vazia) => vazia ? '-' : ((Number(v) || 0) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
         const fPctE = (v, vazia) => {
             if (vazia) return '-';
-            let num = Number(v) || 0;
-            const sinal = num > 0 ? '+' : '';
-            return sinal + (num * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+            let num = Number(v) || 0; return (num > 0 ? '+' : '') + (num * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
         };
 
         bancoDados.forEach((prod) => {
@@ -587,46 +847,31 @@
                 prod.linhas.forEach(l => {
                     const isVazia = (l.isAquisicaoVazia === true || l.isVendaVazia === true);
                     if (!isVazia) {
-                        let lc = Number(l.lucroBrutoC) || 0;
-                        let md = Number(l.margemD) || 0;
-                        if (lc < minC) minC = lc;
-                        if (lc > maxC) maxC = lc;
-                        if (md < minD) minD = md;
-                        if (md > maxD) maxD = md;
+                        let lc = Number(l.lucroBrutoC) || 0; let md = Number(l.margemD) || 0;
+                        if (lc < minC) minC = lc; if (lc > maxC) maxC = lc;
+                        if (md < minD) minD = md; if (md > maxD) maxD = md;
                     }
                 });
             }
 
-            let baseRow = null;
-            if (showQtdLitros && showComparar && prod.periodoComparacao) {
-                baseRow = prod.linhas.find(l => l.periodo === prod.periodoComparacao);
-            }
-
-            let sumQtdLitros = 0;
-            let sumLucroTotal = 0;
-            let sumDiff = 0;
+            let baseRow = (showQtdLitros && showComparar && prod.periodoComparacao) ? prod.linhas.find(l => l.periodo === prod.periodoComparacao) : null;
+            let sumQtdLitros = 0, sumLucroTotal = 0, sumDiff = 0;
 
             prod.linhas.forEach(lin => {
                 const tr = document.createElement('tr');
                 const isVazia = (lin.isAquisicaoVazia === true || lin.isVendaVazia === true);
                 if (isVazia) tr.classList.add('linha-incompleta');
+                if (lin.selecionado) tr.classList.add('linha-selecionada');
 
-                let lc = Number(lin.lucroBrutoC) || 0;
-                let md = Number(lin.margemD) || 0;
-
+                let lc = Number(lin.lucroBrutoC) || 0, md = Number(lin.margemD) || 0;
                 let styleC = '', styleD = '';
-                if (showIndicador && !isVazia) {
-                    styleC = getGradientStyle(lc, minC, maxC);
-                    styleD = getGradientStyle(md, minD, maxD);
-                }
+                if (showIndicador && !isVazia) { styleC = getGradientStyle(lc, minC, maxC); styleD = getGradientStyle(md, minD, maxD); }
 
                 let aumE = Number(lin.aumentoReducaoE) || 0;
                 let colCorE = aumE > 0 ? 'green' : (aumE < 0 ? 'red' : 'black');
                 let tdFrete = temFrete ? `<td>${lin.frete > 0 ? fMoeda(lin.frete, false) : '-'}</td>` : '';
                 
-                let qLitros = Number(lin.qtdLitros) || 0;
-                sumQtdLitros += qLitros;
-
+                let qLitros = Number(lin.qtdLitros) || 0; sumQtdLitros += qLitros;
                 let tdLitrosHtml = temLitros ? `<td class="${clsLitrosPrint}">${qLitros > 0 ? qLitros.toLocaleString('pt-BR') : '-'}</td>` : '';
                 
                 let tdQtd = '', tdComp = '';
@@ -637,22 +882,22 @@
                 }
 
                 if (showQtdLitros && showComparar) {
-                    if (isVazia || !baseRow || qLitros === 0) {
-                        tdComp = `<td>-</td>`;
-                    } else {
-                        let lucroAtual = qLitros * lc;
-                        let baseLucroAbsoluto = (Number(baseRow.qtdLitros)||0) * (Number(baseRow.lucroBrutoC)||0);
-                        let diff = lucroAtual - baseLucroAbsoluto;
+                    if (isVazia || !baseRow || qLitros === 0) { tdComp = `<td>-</td>`; } 
+                    else {
+                        let diff = (qLitros * lc) - ((Number(baseRow.qtdLitros)||0) * (Number(baseRow.lucroBrutoC)||0));
                         sumDiff += diff;
                         let corDiff = diff > 0 ? 'green' : (diff < 0 ? 'red' : 'black');
-                        let sinal = diff > 0 ? '+' : '';
-                        tdComp = `<td style="color: ${corDiff}; font-weight: bold;">${sinal}${fMoeda2(diff, false)}</td>`;
+                        tdComp = `<td style="color: ${corDiff}; font-weight: bold;">${diff > 0 ? '+' : ''}${fMoeda2(diff, false)}</td>`;
                     }
                 }
 
                 const nomeSafeBotao = prod.nome.replace(/'/g, "\\'");
+                const inputSel = `<input type="checkbox" onchange="toggleSelecaoIA('${nomeSafeBotao}', ${lin.id})" ${lin.selecionado ? 'checked' : ''}>`;
+                const inputBase = `<input type="radio" name="base_${nomeSafeBotao}" onchange="setBaseIA('${nomeSafeBotao}', ${lin.id})" ${lin.isBaseIA ? 'checked' : ''}>`;
 
                 tr.innerHTML = `
+                    <td class="no-print">${inputSel}</td>
+                    <td class="no-print">${inputBase}</td>
                     <td>${lin.docId || ''}</td>
                     <td>${lin.periodo || ''}</td>
                     <td>${fMoeda(lin.aquisicao, lin.isAquisicaoVazia)}</td>
@@ -689,20 +934,12 @@
                 let tdLitrosMedia = temLitros ? `<td class="${clsLitrosPrint}">${sumQtdLitros > 0 ? sumQtdLitros.toLocaleString('pt-BR') : '-'}</td>` : '';
                 
                 let tdQtdMedia = '', tdCompMedia = '';
-                if (showQtdLitros) {
-                    tdQtdMedia = `<td style="color: var(--primary-color);"><b>Σ TOTAL:</b><br>${fMoeda2(sumLucroTotal, false)}</td>`;
-                }
-                if (showQtdLitros && showComparar) {
-                    let corDiff = sumDiff > 0 ? 'green' : (sumDiff < 0 ? 'red' : 'black');
-                    let sinal = sumDiff > 0 ? '+' : '';
-                    tdCompMedia = `<td style="color: ${corDiff};"><b>Σ DIF:</b><br>${sinal}${fMoeda2(sumDiff, false)}</td>`;
-                }
-
-                // Troca Média ou Média/Totais com base no checkbox
-                let textMedia = showQtdLitros ? "MÉDIA / TOTAIS" : "MÉDIA";
+                if (showQtdLitros) tdQtdMedia = `<td style="color: var(--primary-color);"><b>Σ TOTAL:</b><br>${fMoeda2(sumLucroTotal, false)}</td>`;
+                if (showQtdLitros && showComparar) tdCompMedia = `<td style="color: ${sumDiff > 0 ? 'green' : (sumDiff < 0 ? 'red' : 'black')};"><b>Σ DIF:</b><br>${sumDiff > 0 ? '+' : ''}${fMoeda2(sumDiff, false)}</td>`;
 
                 trMedia.innerHTML = `
-                    <td>${textMedia}</td>
+                    <td class="no-print" colspan="2"></td>
+                    <td>MÉDIA / TOTAIS</td>
                     <td></td>
                     <td>${fMoeda(avgAquisicao, false)}</td>
                     ${tdFreteMedia}
@@ -719,10 +956,209 @@
                 sheetTableBody.appendChild(trMedia);
             }
         });
+
+        // Atualiza gráficos automaticamente se estiverem habilitados
+        if (document.getElementById('chkGraficos') && document.getElementById('chkGraficos').checked) {
+            renderGraficos();
+        }
     }
 
     // -------------------------------------------------------------------------
-    // RELATÓRIOS (Semanal / Mensal)
+    // INTEGRAÇÃO COM IA GEMINI E COPIAR TEXTO
+    // -------------------------------------------------------------------------
+    function abrirModalIA() {
+        document.getElementById('modalIA').style.display = 'flex';
+        document.getElementById('btnCopiarIA').style.display = 'none'; 
+    }
+
+    function fecharModalIA() {
+        document.getElementById('modalIA').style.display = 'none';
+    }
+
+    function copiarTextoIA() {
+        const texto = document.getElementById('textoResultadoIA').value;
+        if (!texto) return;
+        
+        navigator.clipboard.writeText(texto).then(() => {
+            const btn = document.getElementById('btnCopiarIA');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = "✅ Copiado!";
+            btn.style.backgroundColor = "#27ae60";
+            setTimeout(() => { 
+                btn.innerHTML = textoOriginal; 
+                btn.style.backgroundColor = "#34495e";
+            }, 2500);
+        }).catch(err => {
+            alert("Erro ao copiar o texto: " + err);
+        });
+    }
+
+    async function gerarTextoIA() {
+        const apiKey = document.getElementById('geminiApiKey').value.trim();
+        if(!apiKey) { alert("Por favor, insira a Chave da API do Gemini no campo correspondente (painel superior)."); return; }
+
+        let produtosCadastrados = bancoDados.map(p => `• ${p.nome}`).join('\n');
+        if (bancoDados.length === 0) { alert("Cadastre produtos e lance dados antes de analisar."); return; }
+
+        let dadosSelecionados = [];
+        let temFreteSelecionado = false; 
+        let datasGlobaisDaPlanilha = []; 
+        
+        let condicaoNaoRepasse = false;
+        let condicaoEstoqueAntigo = false;
+
+        // Varrer toda a planilha para extrair todas as datas (min/max geral) e processar as seleções
+        bancoDados.forEach(prod => {
+            // Busca todas as datas para cabeçalho
+            prod.linhas.forEach(l => {
+                let dTS = parseDate(l.periodo);
+                if (dTS > 0) datasGlobaisDaPlanilha.push(dTS);
+            });
+
+            // Isola linhas selecionadas e aplica lógica de condição
+            let linhasSel = prod.linhas.filter(l => l.selecionado);
+            if (linhasSel.length > 0) {
+                linhasSel.sort((a,b) => parseDate(a.periodo) - parseDate(b.periodo)); 
+                
+                // Analisa as regras condicionais comparando linhas selecionadas consecutivas
+                for (let i = 1; i < linhasSel.length; i++) {
+                    let prev = linhasSel[i-1];
+                    let curr = linhasSel[i];
+
+                    // Regra: preço de aquisição <= anterior E preço de venda > anterior
+                    if (curr.aquisicao <= prev.aquisicao && curr.venda > prev.venda) {
+                        condicaoNaoRepasse = true;
+                    }
+                    // Regra: mesma nota (docId) E preço de venda > anterior
+                    if (curr.docId && prev.docId && curr.docId.trim().toLowerCase() === prev.docId.trim().toLowerCase() && curr.venda > prev.venda) {
+                        condicaoEstoqueAntigo = true;
+                    }
+                }
+                
+                dadosSelecionados.push({
+                    produto: prod.nome,
+                    registros_fiscais: linhasSel.map(l => {
+                        if (l.frete > 0) temFreteSelecionado = true;
+
+                        return {
+                            nota_fiscal: l.docId,
+                            data_periodo: l.periodo,
+                            preco_aquisicao: l.aquisicao,
+                            preco_venda_consumidor: l.venda,
+                            margem_bruta_estimada: l.lucroBrutoC.toFixed(4), 
+                            margem_percentual: ((l.margemD || 0)*100).toFixed(1) + "%",
+                            is_linha_base: l.isBaseIA
+                        };
+                    })
+                });
+            }
+        });
+
+        if (dadosSelecionados.length === 0) {
+            alert("Selecione ao menos uma linha na tabela marcando a caixa de seleção 'Sel.'.");
+            return;
+        }
+
+        // --- Calcula Data Inicial e Final GLOBALMENTE ---
+        let textoPeriodo = "";
+        if (datasGlobaisDaPlanilha.length > 0) {
+            let dataMinTS = Math.min(...datasGlobaisDaPlanilha);
+            let dataMaxTS = Math.max(...datasGlobaisDaPlanilha);
+            
+            let dataMinStr = formatData(dataMinTS);
+            let dataMaxStr = formatData(dataMaxTS);
+            
+            textoPeriodo = ` no período compreendido entre ${dataMinStr} e ${dataMaxStr}`;
+        }
+
+        // Configuração visual do botão gerando
+        document.getElementById('btnGerarIA').disabled = true;
+        document.getElementById('btnCopiarIA').style.display = 'none'; 
+        document.getElementById('loadingIA').style.display = 'inline';
+        document.getElementById('textoResultadoIA').value = "Processando informações e gerando texto. Isso pode levar alguns segundos...";
+
+        // --- Construção Dinâmica dos Trechos Condicionais ---
+        let fraseFrete = temFreteSelecionado ? " Ressalta-se que, para o cálculo das margens, foi descontado o valor do frete apresentado pela documentação comprobatória correspondente." : "";
+        let fraseNaoRepasse = condicaoNaoRepasse ? " (inclusive ao não repassar reduções no custo de aquisição)" : "";
+        let fraseEstoqueAntigo = condicaoEstoqueAntigo ? " e à elevação de preços injustificada antes da reposição dos estoques antigos" : "";
+        let fraseIntroEstoqueAntigo = condicaoEstoqueAntigo ? ", bem como configurou-se a elevação de preços antes da efetiva reposição de estoques" : "";
+
+        // Constrói o modelo final exato a ser utilizado pela IA
+        let textoModeloIA = `No exercício das atribuições legais conferidas aos órgãos de proteção e defesa do consumidor, procedeu-se à análise dos documentos fiscais encaminhados pela empresa autuada, referentes às operações de compra e venda de combustíveis${textoPeriodo}.
+Foram objeto de análise os seguintes produtos:
+[LISTAR_PRODUTOS_AQUI]
+
+A partir do cotejo entre notas fiscais de aquisição, cupons fiscais de venda ao consumidor e demais elementos informativos, foram identificados indícios de que o reajuste aplicado ao preço final ao consumidor superou a variação dos custos de aquisição${fraseIntroEstoqueAntigo}. Embora tenha havido aumento no custo do produto em determinados momentos, o estabelecimento procedeu a uma majoração indevida da margem de lucro bruta, elevando os preços acima do estritamente necessário para a recomposição de custos.${fraseFrete}
+
+Durante a análise, verificaram-se os seguintes elementos específicos quanto aos produtos:
+[ANALISE_PRODUTOS_AQUI]
+
+Diante dos elementos analisados, constatou-se que o reajuste aplicado ao preço final dos produtos analisados não se limitou ao repasse dos custos de aquisição. Verificou-se que o estabelecimento procedeu à majoração indevida de suas margens de lucro brutas${fraseNaoRepasse}${fraseEstoqueAntigo}. Tal conduta extrapola a necessidade de recomposição de custos e configura prática abusiva de aumento arbitrário de preços ao consumidor, exigindo vantagem manifestamente excessiva, nos termos do Art. 39, incisos V e X, do Código de Defesa do Consumidor – Lei 8.078/1990.`;
+
+        // Instruções rigorosas, blindando a palavra "absoluto(a)" e FORÇANDO o modo Plain Text (sem Markdown)
+        const promptInstrucoes = `Você é um Auditor Fiscal especialista em Defesa do Consumidor (Procon). 
+Sua tarefa é redigir um Auto de Infração utilizando EXATAMENTE o Modelo fornecido abaixo.
+
+REGRAS DE PREENCHIMENTO E FORMATAÇÃO:
+1. No trecho "[LISTAR_PRODUTOS_AQUI]", insira a seguinte lista:
+${produtosCadastrados}
+
+2. No trecho "[ANALISE_PRODUTOS_AQUI]", crie tópicos para cada produto analisado com base ÚNICA e EXCLUSIVAMENTE nos seguintes dados (formato JSON):
+${JSON.stringify(dadosSelecionados, null, 2)}
+
+3. Para redigir a análise de cada produto, descreva a evolução dos preços de aquisição, venda e a margem de lucro bruta (estimada por unidade e em percentual) nessas datas, evidenciando quando a margem aumentou. Se a mesma nota fiscal se repetir, aponte expressamente que o preço subiu antes da reposição de estoques (caso o preço de venda tenha aumentado).
+
+ATENÇÃO EXTREMA: 
+- NUNCA utilize as palavras "absoluto" ou "absoluta" no texto gerado. Toda a análise de lucro e margem deve ser referida exclusivamente como "estimada".
+- NÃO UTILIZE FORMATAÇÃO MARKDOWN (Proibido o uso de **asteriscos** para negrito ou # para títulos). Todo o texto gerado deve ser TEXTO SIMPLES (Plain Text) pois será copiado diretamente para o Microsoft Word e a formatação Markdown atrapalhará o preenchimento.
+
+Mantenha o tom estritamente formal e jurídico, idêntico ao modelo. Traga como resposta APENAS o texto completo do Auto de Infração finalizado.
+
+MODELO A SEGUIR:
+${textoModeloIA}`;
+
+        const modelosParaTentar = ['gemini-2.5-flash'];
+        let textoGerado = "";
+        let sucesso = false;
+        let ultimoErro = "";
+
+        for (let model of modelosParaTentar) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptInstrucoes }] }],
+                        generationConfig: { temperature: 0.2 } // Baixa temperatura
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                textoGerado = data.candidates[0].content.parts[0].text;
+                sucesso = true;
+                break;
+            } catch(e) {
+                ultimoErro = e.message;
+                console.warn(`Falha na tentativa com o modelo ${model}: ${ultimoErro}`);
+            }
+        }
+
+        // Exibe o resultado e libera o botão de copiar
+        if (sucesso) {
+            document.getElementById('textoResultadoIA').value = textoGerado;
+            document.getElementById('btnCopiarIA').style.display = 'inline-block';
+        } else {
+            document.getElementById('textoResultadoIA').value = "ERRO AO GERAR TEXTO: \n" + ultimoErro + "\n\nO modelo gemini-2.5-flash encontrou um erro. Verifique sua chave de API e se você possui o acesso/permissão a esse modelo no Google AI Studio.";
+        }
+        
+        document.getElementById('btnGerarIA').disabled = false;
+        document.getElementById('loadingIA').style.display = 'none';
+    }
+
+    // -------------------------------------------------------------------------
+    // DEMAIS FUNÇÕES ORIGINAIS (Salvar, Importar, etc)
     // -------------------------------------------------------------------------
     function gerarRelatorio() {
         if(bancoDados.length === 0) return alert("Não há dados cadastrados para gerar o relatório.");
@@ -752,11 +1188,9 @@
                 let labelFormated = "";
 
                 if(tipo === 'M') {
-                    // YYYY-MM para ordenação invisível correta
                     key = `${parts[2]}-${parts[1]}`;
                     labelFormated = `${parts[1]}/${parts[2]}`;
                 } else {
-                    // Semana baseada no MÊS: Dia 1 ao 7 = Sem 1; 8 ao 14 = Sem 2, etc.
                     let diaMes = d.getDate();
                     let semanaMes = Math.ceil(diaMes / 7);
                     let nomeMes = mesesNomes[d.getMonth()];
@@ -866,14 +1300,7 @@
         janela.document.close();
     }
 
-    // -------------------------------------------------------------------------
-    // CRIPTOGRAFIA (SALVAR / IMPORTAR)
-    // -------------------------------------------------------------------------
     function salvarDados() {
-        const chkInd = document.getElementById('chkIndicador');
-        const chkQtd = document.getElementById('chkQtdLitros');
-        const chkCmp = document.getElementById('chkComparar');
-
         const pacoteBackup = {
             notificacao: document.getElementById('notificacaoNum') ? document.getElementById('notificacaoNum').value : '',
             razaoSocial: document.getElementById('razaoSocial') ? document.getElementById('razaoSocial').value : '',
@@ -883,40 +1310,29 @@
             produtoHeader: document.getElementById('produtoHeader') ? document.getElementById('produtoHeader').value : '',
             bancoDados: bancoDados,
             configs: {
-                indicador: chkInd ? chkInd.checked : false,
-                qtdLitrosCheck: chkQtd ? chkQtd.checked : false,
-                compararCheck: chkCmp ? chkCmp.checked : false
+                indicador: document.getElementById('chkIndicador') ? document.getElementById('chkIndicador').checked : false,
+                qtdLitrosCheck: document.getElementById('chkQtdLitros') ? document.getElementById('chkQtdLitros').checked : false,
+                compararCheck: document.getElementById('chkComparar') ? document.getElementById('chkComparar').checked : false,
+                graficos: document.getElementById('chkGraficos') ? document.getElementById('chkGraficos').checked : false,
+                imprimirGraficos: document.getElementById('chkImprimirGraficos') ? document.getElementById('chkImprimirGraficos').checked : false
             }
         };
 
         let jsonString = JSON.stringify(pacoteBackup, null, 2);
-
-        // Prompt de Criptografia
         const desejaSenha = confirm("Deseja proteger este arquivo de backup com uma SENHA?\n\n(OK = Sim. Cancelar = Salvar sem senha)");
         
         if (desejaSenha) {
             const senha = prompt("🔒 Digite a senha para proteger o arquivo:");
-            if (!senha) {
-                alert("Operação cancelada. A planilha NÃO foi salva.");
-                return;
-            }
+            if (!senha) return alert("Operação cancelada.");
             try {
-                const dadosCriptografados = CryptoJS.AES.encrypt(jsonString, senha).toString();
-                const pacoteSeguro = {
-                    encrypted: true,
-                    data: dadosCriptografados
-                };
-                jsonString = JSON.stringify(pacoteSeguro, null, 2);
-            } catch (err) {
-                alert("Falha ao criptografar o arquivo.");
-                return;
-            }
+                jsonString = JSON.stringify({ encrypted: true, data: CryptoJS.AES.encrypt(jsonString, senha).toString() }, null, 2);
+            } catch (err) { return alert("Falha ao criptografar."); }
         }
 
         const blob = new Blob([jsonString], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        
         const dlAnchorElem = document.createElement('a');
+        
         let txtNotif = pacoteBackup.notificacao || 'Combustivel';
         let numNotif = txtNotif.replace(/[^a-zA-Z0-9]/g, "_");
         
@@ -926,57 +1342,36 @@
         document.body.appendChild(dlAnchorElem);
         dlAnchorElem.click();
         document.body.removeChild(dlAnchorElem);
-        
         URL.revokeObjectURL(url);
     }
 
-    function acionarImportacao() {
-        document.getElementById('importFile').click();
-    }
+    function acionarImportacao() { document.getElementById('importFile').click(); }
 
     function importarDados(input) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 let dadosBrutos = JSON.parse(e.target.result);
-                
-                // Descriptografia
                 if (dadosBrutos.encrypted && dadosBrutos.data) {
-                    const senha = prompt("🔒 Este arquivo está protegido.\nDigite a senha para abrir:");
-                    if (!senha) {
-                        alert("Operação cancelada.");
-                        input.value = '';
-                        return;
-                    }
-                    
+                    const senha = prompt("🔒 Digite a senha para abrir:");
+                    if (!senha) return input.value = '';
                     const bytes = CryptoJS.AES.decrypt(dadosBrutos.data, senha);
-                    const jsonDescriptografado = bytes.toString(CryptoJS.enc.Utf8);
-                    
-                    if (!jsonDescriptografado) {
-                        throw new Error("Senha incorreta");
-                    }
-                    
-                    dadosBrutos = JSON.parse(jsonDescriptografado);
+                    dadosBrutos = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
                 }
-
                 if (dadosBrutos && Array.isArray(dadosBrutos.bancoDados)) {
-                    const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ''; };
                     
+                    const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ''; };
                     setVal('notificacaoNum', dadosBrutos.notificacao);
                     if(document.getElementById('notificacaoNumSpan')) document.getElementById('notificacaoNumSpan').textContent = dadosBrutos.notificacao || '';
-                    
                     setVal('razaoSocial', dadosBrutos.razaoSocial);
                     setVal('cnpj', dadosBrutos.cnpj);
                     setVal('endereco', dadosBrutos.endereco);
                     setVal('contato', dadosBrutos.contato);
                     setVal('produtoHeader', dadosBrutos.produtoHeader);
-                    
-                    bancoDados = dadosBrutos.bancoDados;
 
-                    // Compatibilidade e Higienização de dados velhos
+                    bancoDados = dadosBrutos.bancoDados;
                     bancoDados.forEach(p => {
                         if(!p.periodoComparacao) p.periodoComparacao = '';
                         if(!p.linhas) p.linhas = [];
@@ -987,50 +1382,43 @@
                             l.frete = Number(l.frete) || 0;
                             l.lucroBrutoC = Number(l.lucroBrutoC) || 0;
                             l.margemD = Number(l.margemD) || 0;
+                            if (l.selecionado === undefined) l.selecionado = false;
+                            if (l.isBaseIA === undefined) l.isBaseIA = false;
                         });
                     });
 
                     const setChk = (id, val) => { if(document.getElementById(id)) document.getElementById(id).checked = !!val; };
-                    
                     if(dadosBrutos.configs) {
                         setChk('chkIndicador', dadosBrutos.configs.indicador);
                         setChk('chkQtdLitros', dadosBrutos.configs.qtdLitrosCheck);
                         setChk('chkComparar', dadosBrutos.configs.compararCheck);
+                        setChk('chkGraficos', dadosBrutos.configs.graficos);
+                        setChk('chkImprimirGraficos', dadosBrutos.configs.imprimirGraficos);
                     } else {
-                        setChk('chkIndicador', false);
-                        setChk('chkQtdLitros', false);
-                        setChk('chkComparar', false);
+                        setChk('chkIndicador', false); setChk('chkQtdLitros', false); setChk('chkComparar', false);
+                        setChk('chkGraficos', false); setChk('chkImprimirGraficos', false);
                     }
                     
-                    atualizarDropdown();
-                    atualizarTabela();
-                    alert('Planilha carregada com sucesso!');
-                } else {
-                    alert('Arquivo inválido ou em formato incorreto.');
+                    atualizarDropdown(); atualizarTabela();
+
+                    // Restaura estado visual dos gráficos, se aplicável
+                    if (document.getElementById('chkGraficos').checked) {
+                        toggleGraficos();
+                        if (document.getElementById('chkImprimirGraficos').checked) toggleImprimirGraficos();
+                    }
+
+                    alert('Planilha carregada!');
                 }
-            } catch (err) {
-                if (err.message === "Senha incorreta") {
-                    alert('❌ Senha incorreta!');
-                } else {
-                    alert('Erro ao processar o arquivo. Ele pode estar corrompido.');
-                }
-            } finally {
-                input.value = '';
-            }
+            } catch (err) { alert('Erro ao processar o arquivo. Senha incorreta ou arquivo corrompido.'); }
+            input.value = '';
         };
         reader.readAsText(file);
     }
 
     function limparTudo() {
-        if (confirm('Atenção: Isso apagará todos os produtos e lançamentos. Deseja continuar?')) {
-            bancoDados = [];
-            atualizarDropdown();
-            atualizarTabela();
-            cancelarEdicao();
-        }
+        if (confirm('Atenção: Isso apagará todos os produtos e lançamentos. Deseja continuar?')) { bancoDados = []; atualizarDropdown(); atualizarTabela(); cancelarEdicao(); }
     }
 
-    // Inicialização da tela na abertura
     atualizarTabela();
 </script>
 
