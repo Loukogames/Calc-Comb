@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- ================= REFORÇO CONTRA CACHE (Solução 2) ================= -->
+    <!-- ================= REFORÇO CONTRA CACHE ================= -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <!-- ====================================================================== -->
+    <!-- ========================================================= -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Documentos - Posto de Combustível</title>
     
@@ -798,8 +798,12 @@
         `;
 
         if (temLitros) theadHTML += `<th rowspan="2" class="${clsLitrosPrint}" style="width: 7%;">QTD LITROS</th>`;
-        if (showQtdLitros) theadHTML += `<th rowspan="2" style="width: 10%; color: var(--primary-color);">LUCRO ESTIMADO P/<br>QTD LITROS</th>`;
-        if (showQtdLitros && showComparar) theadHTML += `<th rowspan="2" style="width: 10%;">COMPARAÇÃO<br>DE PERÍODO</th>`;
+        if (showQtdLitros) {
+            theadHTML += `<th rowspan="2" style="width: 10%; color: var(--primary-color);">LUCRO ESTIMADO P/<br>QTD LITROS</th>`;
+        }
+        if (showQtdLitros && showComparar) {
+            theadHTML += `<th rowspan="2" style="width: 10%;">COMPARAÇÃO<br>DE PERÍODO</th>`;
+        }
         
         theadHTML += `
                 <th rowspan="2" class="no-print" style="width: 5px; border: none; background: transparent;"></th>
@@ -962,7 +966,7 @@
             }
         });
 
-        // Atualiza gráficos automaticamente se estiverem habilitados
+        // Computa novamente os gráficos caso estejam visíveis
         if (document.getElementById('chkGraficos') && document.getElementById('chkGraficos').checked) {
             renderGraficos();
         }
@@ -998,6 +1002,25 @@
         });
     }
 
+    // -------------------------------------------------------------------------
+    // GERAÇÃO DO TEXTO DE ANÁLISE (IA)
+    // -------------------------------------------------------------------------
+
+    // Modelo de referência de ESTILO fornecido pelo usuário (usado apenas como exemplo de formatação para a IA)
+    const MODELO_ESTILO_IA = `Gasolina Comum:
+• Elevação de preços sem reposição de estoques: Constatou-se que o preço de venda ao consumidor praticado em 05/03/2026, no valor de R$ 6,60, foi majorado para R$ 6,99 em 10/03/2026. Considerando que a última aquisição havia ocorrido em 04/03/2026 (DANFE nº 211648) e a nova compra ocorreu somente em 11/03/2026 (DANFE nº 212068), a elevação configura prática abusiva. Novamente, verificou-se que o preço de venda de R$ 7,20, praticado em 14/03/2026, foi majorado para R$ 7,39 em 19/03/2026, sendo que a aquisição anterior datava de 13/03/2026 (DANFE nº 212186) e a reposição seguinte ocorreu apenas em 21/03/2026 (DANFE nº 212720).
+• Elevação de preços e ampliação de margem: Em 02/02/2026, o produto era adquirido a R$ 5,2396 (DANFE nº 209862) e comercializado a R$ 6,60, com margem de lucro bruta estimada de R$ 1,20 por unidade. Em 16/04/2026, o produto foi comprado por R$ 5,9305 (DANFE nº 213950) e vendido por R$ 6,89, passando a margem de lucro bruta estimada para R$ 1,27 por unidade.
+
+Diesel S500:
+• Elevação de preços sem reposição de estoques: Constatou-se que o preço de venda de R$ 6,25, praticado em 05/03/2026, foi majorado para R$ 7,00 em 10/03/2026. A elevação ocorreu antes da reposição dos estoques, visto que a aquisição anterior foi em 04/03/2026 (DANFE nº 211648) e a subsequente apenas em 11/03/2026 (DANFE nº 212068).
+• Elevação de preços e ampliação de margem: Em 02/02/2026, o produto era comprado a R$ 5,3305 (DANFE nº 209862) e vendido a R$ 6,25 (margem de lucro bruta de 12,1%, equivalente a R$ 0,75 por unidade). Em 11/03/2026, foi comprado por R$ 6,25 (DANFE nº 212068) e vendido por R$ 7,65, elevando a margem para 15,8% (R$ 1,21/unid.). Em 13/03/2026, a compra foi realizada a R$ 6,4305 (DANFE nº 212186) e a comercialização a R$ 8,05, com margem de 17,8% (R$ 1,43/unid.). Por fim, em 16/04/2026, adquirido a R$ 6,6725 (DANFE nº 213950) e vendido a R$ 8,05, atingindo margem de 14,8% (R$ 1,19/unid.).
+
+Diesel S10:
+• Elevação de preços sem reposição de estoques: O preço de venda de R$ 6,25, praticado em 05/03/2026, foi majorado para R$ 7,10 em 10/03/2026. A elevação ocorreu antes da reposição dos estoques, visto que a última aquisição ocorreu em 04/03/2026 (DANFE nº 211648) e a nova compra apenas em 11/03/2026 (DANFE nº 212068).
+• Elevação de preços e ampliação de margem: Em 02/02/2026, o produto era comprado a R$ 5,3115 (DANFE nº 209862) e vendido a R$ 6,25 (margem de 12,4%, ou R$ 0,77/unid.). Em 11/03/2026, a aquisição ocorreu por R$ 6,4045 (DANFE nº 212068) com venda a R$ 7,70, passando a margem para 14,4% (R$ 1,11/unid.). Em 13/03/2026, a compra foi de R$ 6,5845 (DANFE nº 212186) e a venda de R$ 8,15, elevando a margem para 16,9% (R$ 1,38/unid.). A trajetória seguiu em 11/04/2026 com compra a R$ 6,8018 (DANFE nº 213725) e comercialização a R$ 8,15 (margem de 14,2%, ou R$ 1,16/unid.), e em 16/04/2026 com aquisição a R$ 6,7505 (DANFE nº 213950) e venda a R$ 8,15, registrando margem de 14,8% (R$ 1,21/unid.).`;
+
+    const docLabel = (doc) => (doc && doc.trim() !== '') ? doc.trim() : null;
+
     async function gerarTextoIA() {
         const apiKey = document.getElementById('geminiApiKey').value.trim();
         if(!apiKey) { alert("Por favor, insira a Chave da API do Gemini no campo correspondente (painel superior)."); return; }
@@ -1005,61 +1028,116 @@
         let produtosCadastrados = bancoDados.map(p => `• ${p.nome}`).join('\n');
         if (bancoDados.length === 0) { alert("Cadastre produtos e lance dados antes de analisar."); return; }
 
-        let dadosSelecionados = [];
+        const formatarMoedaIA = (v) => 'R$ ' + (Number(v)||0).toLocaleString('pt-BR', {minimumFractionDigits: 4, maximumFractionDigits: 4});
+        const formatarPctIA = (v) => ((Number(v)||0) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%';
+
+        let dadosPorProduto = [];
         let temFreteSelecionado = false; 
         let datasGlobaisDaPlanilha = []; 
-        
         let condicaoNaoRepasse = false;
         let condicaoEstoqueAntigo = false;
 
-        // Varrer toda a planilha para extrair todas as datas (min/max geral) e processar as seleções
         bancoDados.forEach(prod => {
-            // Busca todas as datas para cabeçalho
             prod.linhas.forEach(l => {
                 let dTS = parseDate(l.periodo);
                 if (dTS > 0) datasGlobaisDaPlanilha.push(dTS);
             });
 
-            // Isola linhas selecionadas e aplica lógica de condição
             let linhasSel = prod.linhas.filter(l => l.selecionado);
-            if (linhasSel.length > 0) {
-                linhasSel.sort((a,b) => parseDate(a.periodo) - parseDate(b.periodo)); 
-                
-                // Analisa as regras condicionais comparando linhas selecionadas consecutivas
-                for (let i = 1; i < linhasSel.length; i++) {
-                    let prev = linhasSel[i-1];
-                    let curr = linhasSel[i];
+            if (linhasSel.length === 0) return;
+            linhasSel.sort((a,b) => parseDate(a.periodo) - parseDate(b.periodo));
 
-                    // Regra: preço de aquisição <= anterior E preço de venda > anterior
-                    if (curr.aquisicao <= prev.aquisicao && curr.venda > prev.venda) {
-                        condicaoNaoRepasse = true;
+            // 1) Cronologia completa com flags de irregularidades concisas entre períodos consecutivos
+            let cronologia = [];
+            for (let i = 0; i < linhasSel.length; i++) {
+                let l = linhasSel[i];
+                if (l.frete > 0) temFreteSelecionado = true;
+
+                let analiseTransicao = {
+                    ampliacao_margem: false,
+                    nao_repasse_reducao_custo: false,
+                    elevacao_preco_estoque_antigo: false
+                };
+
+                if (i > 0) {
+                    let prev = linhasSel[i - 1];
+                    
+                    // Constatação 1: Ampliação da margem de lucro estimada
+                    if (l.margemD > prev.margemD) {
+                        analiseTransicao.ampliacao_margem = true;
                     }
-                    // Regra: mesma nota (docId) E preço de venda > anterior
-                    if (curr.docId && prev.docId && curr.docId.trim().toLowerCase() === prev.docId.trim().toLowerCase() && curr.venda > prev.venda) {
-                        condicaoEstoqueAntigo = true;
+                    
+                    // Constatação 2: Não repasse de redução no custo (Custo caiu, mas venda se manteve ou subiu)
+                    if (l.aquisicao < prev.aquisicao && l.venda >= prev.venda) {
+                        analiseTransicao.nao_repasse_reducao_custo = true;
+                        condicaoNaoRepasse = true; 
+                    }
+
+                    // Constatação 3: Elevação de preço em estoque antigo (Mesma DANFE, mas preço de venda subiu)
+                    if (l.docId && prev.docId && l.docId.trim().toLowerCase() === prev.docId.trim().toLowerCase() && l.venda > prev.venda) {
+                        analiseTransicao.elevacao_preco_estoque_antigo = true;
                     }
                 }
-                
-                dadosSelecionados.push({
-                    produto: prod.nome,
-                    registros_fiscais: linhasSel.map(l => {
-                        if (l.frete > 0) temFreteSelecionado = true;
 
-                        return {
-                            nota_fiscal: l.docId,
-                            data_periodo: l.periodo,
-                            preco_aquisicao: l.aquisicao,
-                            preco_venda_consumidor: l.venda,
-                            margem_bruta_estimada: l.lucroBrutoC.toFixed(4), 
-                            margem_percentual: ((l.margemD || 0)*100).toFixed(1) + "%",
-                            is_linha_base: l.isBaseIA
-                        };
-                    })
+                cronologia.push({
+                    periodo: l.periodo,
+                    danfe: docLabel(l.docId),
+                    preco_aquisicao: formatarMoedaIA(l.aquisicao),
+                    preco_venda: formatarMoedaIA(l.venda),
+                    margem_por_unidade: formatarMoedaIA(l.lucroBrutoC),
+                    margem_percentual: formatarPctIA(l.margemD),
+                    irregularidades_identificadas: analiseTransicao
                 });
             }
+
+            // 2) Eventos de "venda sem reposição de estoque" 
+            let eventosSemReposicao = [];
+            for (let i = 1; i < linhasSel.length; i++) {
+                let curr = linhasSel[i];
+
+                if (curr.docId && curr.docId.trim() !== '') {
+                    let ref = null;
+                    for (let j = i - 1; j >= 0; j--) {
+                        let anterior = linhasSel[j];
+                        if (anterior.docId && anterior.docId.trim().toLowerCase() === curr.docId.trim().toLowerCase()) {
+                            ref = anterior;
+                            break;
+                        }
+                    }
+
+                    if (ref && curr.venda > ref.venda) {
+                        condicaoEstoqueAntigo = true; 
+
+                        let proxima = null;
+                        for (let k = i + 1; k < linhasSel.length; k++) {
+                            if (linhasSel[k].docId && linhasSel[k].docId.trim().toLowerCase() !== curr.docId.trim().toLowerCase()) {
+                                proxima = linhasSel[k];
+                                break;
+                            }
+                        }
+
+                        eventosSemReposicao.push({
+                            periodo_venda_anterior: ref.periodo,
+                            valor_venda_anterior: formatarMoedaIA(ref.venda),
+                            periodo_venda_majorada: curr.periodo,
+                            valor_venda_majorada: formatarMoedaIA(curr.venda),
+                            danfe_vigente_na_epoca: docLabel(curr.docId),
+                            periodo_ultima_aquisicao_vigente: ref.periodo,
+                            danfe_reposicao_seguinte: proxima ? docLabel(proxima.docId) : null,
+                            periodo_reposicao_seguinte: proxima ? proxima.periodo : null
+                        });
+                    }
+                }
+            }
+
+            dadosPorProduto.push({
+                produto: prod.nome,
+                cronologia_completa: cronologia,
+                eventos_elevacao_sem_reposicao_estoque: eventosSemReposicao
+            });
         });
 
-        if (dadosSelecionados.length === 0) {
+        if (dadosPorProduto.length === 0) {
             alert("Selecione ao menos uma linha na tabela marcando a caixa de seleção 'Sel.'.");
             return;
         }
@@ -1069,10 +1147,8 @@
         if (datasGlobaisDaPlanilha.length > 0) {
             let dataMinTS = Math.min(...datasGlobaisDaPlanilha);
             let dataMaxTS = Math.max(...datasGlobaisDaPlanilha);
-            
             let dataMinStr = formatData(dataMinTS);
             let dataMaxStr = formatData(dataMaxTS);
-            
             textoPeriodo = ` no período compreendido entre ${dataMinStr} e ${dataMaxStr}`;
         }
 
@@ -1082,45 +1158,84 @@
         document.getElementById('loadingIA').style.display = 'inline';
         document.getElementById('textoResultadoIA').value = "Processando informações e gerando texto. Isso pode levar alguns segundos...";
 
-        // --- Construção Dinâmica dos Trechos Condicionais ---
+        // --- Construção do Parágrafo Final de Conclusão ---
+        let conclusaoFinalTexto = "procedeu à majoração indevida de suas margens de lucro brutas";
+        if (condicaoNaoRepasse && condicaoEstoqueAntigo) {
+            conclusaoFinalTexto += " (inclusive ao não repassar reduções no custo de aquisição) e à elevação de preços injustificada antes da reposição dos estoques antigos.";
+        } else if (condicaoNaoRepasse) {
+            conclusaoFinalTexto += " (inclusive ao não repassar reduções no custo de aquisição).";
+        } else if (condicaoEstoqueAntigo) {
+            conclusaoFinalTexto += " e à elevação de preços injustificada antes da reposição dos estoques antigos.";
+        } else {
+            conclusaoFinalTexto += ".";
+        }
+
         let fraseFrete = temFreteSelecionado ? " Ressalta-se que, para o cálculo das margens, foi descontado o valor do frete apresentado pela documentação comprobatória correspondente." : "";
-        let fraseNaoRepasse = condicaoNaoRepasse ? " (inclusive ao não repassar reduções no custo de aquisição)" : "";
-        let fraseEstoqueAntigo = condicaoEstoqueAntigo ? " e à elevação de preços injustificada antes da reposição dos estoques antigos" : "";
         let fraseIntroEstoqueAntigo = condicaoEstoqueAntigo ? ", bem como configurou-se a elevação de preços antes da efetiva reposição de estoques" : "";
 
-        // Constrói o modelo final exato a ser utilizado pela IA
+        // Constrói o modelo final exato a ser preenchido pela IA
         let textoModeloIA = `No exercício das atribuições legais conferidas aos órgãos de proteção e defesa do consumidor, procedeu-se à análise dos documentos fiscais encaminhados pela empresa autuada, referentes às operações de compra e venda de combustíveis${textoPeriodo}.
 Foram objeto de análise os seguintes produtos:
 [LISTAR_PRODUTOS_AQUI]
 
 A partir do cotejo entre notas fiscais de aquisição, cupons fiscais de venda ao consumidor e demais elementos informativos, foram identificados indícios de que o reajuste aplicado ao preço final ao consumidor superou a variação dos custos de aquisição${fraseIntroEstoqueAntigo}. Embora tenha havido aumento no custo do produto em determinados momentos, o estabelecimento procedeu a uma majoração indevida da margem de lucro bruta, elevando os preços acima do estritamente necessário para a recomposição de custos.${fraseFrete}
 
-Durante a análise, verificaram-se os seguintes elementos específicos quanto aos produtos:
+Durante a análise, foram constatadas as seguintes irregularidades específicas por produto:
+
 [ANALISE_PRODUTOS_AQUI]
 
-Diante dos elementos analisados, constatou-se que o reajuste aplicado ao preço final dos produtos analisados não se limitou ao repasse dos custos de aquisição. Verificou-se que o estabelecimento procedeu à majoração indevida de suas margens de lucro brutas${fraseNaoRepasse}${fraseEstoqueAntigo}. Tal conduta extrapola a necessidade de recomposição de custos e configura prática abusiva de aumento arbitrário de preços ao consumidor, exigindo vantagem manifestamente excessiva, nos termos do Art. 39, incisos V e X, do Código de Defesa do Consumidor – Lei 8.078/1990.`;
+Diante dos elementos analisados, constatou-se que o reajuste aplicado ao preço final [PRODUTOS_CONSTATADOS_FINAL] não se limitou ao repasse dos custos de aquisição. Verificou-se que o estabelecimento ${conclusaoFinalTexto} Tal conduta extrapola a necessidade de recomposição de custos e configura prática abusiva de aumento arbitrário de preços ao consumidor, exigindo vantagem manifestamente excessiva, nos termos do Art. 39, incisos V e X, do Código de Defesa do Consumidor – Lei 8.078/1990.`;
 
-        // Instruções rigorosas, blindando a palavra "absoluto(a)" e FORÇANDO o modo Plain Text (sem Markdown)
+        // Prompt do sistema
         const promptInstrucoes = `Você é um Auditor Fiscal especialista em Defesa do Consumidor (Procon). 
-Sua tarefa é redigir um Auto de Infração utilizando EXATAMENTE o Modelo fornecido abaixo.
+Sua tarefa é redigir um Auto de Infração utilizando EXATAMENTE a ESTRUTURA GERAL fornecida no "MODELO GERAL DO DOCUMENTO" abaixo, preenchendo os trechos indicados entre colchetes.
 
-REGRAS DE PREENCHIMENTO E FORMATAÇÃO:
-1. No trecho "[LISTAR_PRODUTOS_AQUI]", insira a seguinte lista:
+=== MODELO GERAL DO DOCUMENTO (preencher os colchetes) ===
+${textoModeloIA}
+=== FIM DO MODELO GERAL ===
+
+REGRAS DE PREENCHIMENTO:
+
+1. No trecho "[LISTAR_PRODUTOS_AQUI]", insira a seguinte lista, um item por linha, cada um precedido pelo marcador "•":
 ${produtosCadastrados}
 
-2. No trecho "[ANALISE_PRODUTOS_AQUI]", crie tópicos para cada produto analisado com base ÚNICA e EXCLUSIVAMENTE nos seguintes dados (formato JSON):
-${JSON.stringify(dadosSelecionados, null, 2)}
+2. No trecho "[PRODUTOS_CONSTATADOS_FINAL]", substitua-o pela lista dos nomes dos produtos analisados em prosa corrida, aplicando as preposições gramaticais adequadas em língua portuguesa (use "da", "do", "das" ou "dos" conforme o gênero de cada produto). Por exemplo, se os produtos analisados forem "GASOLINA COMUM", "DIESEL S500" e "DIESEL S10", redija exatamente: "da Gasolina Comum, do Diesel S500 e do Diesel S10".
 
-3. Para redigir a análise de cada produto, descreva a evolução dos preços de aquisição, venda e a margem de lucro bruta (estimada por unidade e em percentual) nessas datas, evidenciando quando a margem aumentou. Se a mesma nota fiscal se repetir, aponte expressamente que o preço subiu antes da reposição de estoques (caso o preço de venda tenha aumentado).
+3. No trecho "[ANALISE_PRODUTOS_AQUI]", você deve gerar, PARA CADA PRODUTO presente no "JSON DE DADOS REAIS" (fornecido abaixo), um bloco no seguinte formato:
 
-ATENÇÃO EXTREMA: 
+NOME DO PRODUTO:
+• Elevação de preços sem reposição de estoques: [redigir apenas se o produto possuir itens em "eventos_elevacao_sem_reposicao_estoque"]
+• Elevação de preços e ampliação de margem: [redigir com base em "cronologia_completa"]
+
+Para redigir esses dois bullets, você DEVE seguir EXATAMENTE o ESTILO, TOM, ESTRUTURA DE FRASES e NÍVEL DE DETALHAMENTO do "MODELO DE ESTILO DE REFERÊNCIA" apresentado abaixo. Esse modelo contém produtos e valores FICTÍCIOS, apresentados apenas para você compreender COMO REDIGIR — você NÃO deve copiar os valores dele, apenas o padrão de redação.
+
+=== MODELO DE ESTILO DE REFERÊNCIA (valores fictícios, apenas para orientar o ESTILO) ===
+${MODELO_ESTILO_IA}
+=== FIM DO MODELO DE ESTILO DE REFERÊNCIA ===
+
+INSTRUÇÕES ESPECÍFICAS PARA CADA BULLET:
+
+a) "Elevação de preços sem reposição de estoques": Para cada objeto em "eventos_elevacao_sem_reposicao_estoque" do produto, redija uma frase narrando que o preço de venda praticado em "periodo_venda_anterior" (valor "valor_venda_anterior") foi majorado para "valor_venda_majorada" em "periodo_venda_majorada", explicando que a última aquisição vigente (DANFE "danfe_vigente_na_epoca") havia ocorrido em "periodo_ultima_aquisicao_vigente" e que a reposição seguinte (DANFE "danfe_reposicao_seguinte") ocorreu somente em "periodo_reposicao_seguinte" (se "danfe_reposicao_seguinte" for null ou ausente, declare que não foi registrada nova reposição posterior de estoque no período avaliado). Caso existam MÚLTIPLOS eventos para o mesmo produto, narre o primeiro normalmente e inicie a narração dos eventos seguintes com uma expressão de transição como "Novamente, verificou-se que...", exatamente como no modelo de estilo. Se o produto NÃO possuir nenhum item em "eventos_elevacao_sem_reposicao_estoque", OMITA COMPLETAMENTE este bullet para aquele produto (não escreva nada, nem mesmo dizendo que não há ocorrências).
+
+b) "Elevação de preços e ampliação de margem": Narre, em ordem cronológica e em prosa corrida (sem quebras de linha internas), TODOS os registros presentes em "cronologia_completa" do produto, citando a data ("periodo"), o valor de aquisição com a respectiva DANFE ("preco_aquisicao", "danfe"), o valor de venda ("preco_venda") e a margem de lucro bruta estimada (use "margem_por_unidade" e "margem_percentual"), evidenciando a evolução ao longo do tempo.
+AO NARRAR A TRANSIÇÃO ENTRE CADA PERÍODO CONSECUTIVO, verifique as chaves lógicas do campo "irregularidades_identificadas" do registro analisado e cite EXPLICITAMENTE de forma breve e concisa se ocorreram as seguintes constatações:
+- Se "ampliacao_margem" for true: aponte diretamente que o estabelecimento "ampliou injustificadamente a margem de lucro estimada".
+- Se "nao_repasse_reducao_custo" for true: aponte objetivamente que o estabelecimento "reteve a redução do custo de aquisição sem repassá-la ao preço de venda".
+- Se "elevacao_preco_estoque_antigo" for true: aponte de forma direta que o estabelecimento "elevou o preço de venda sobre estoque antigo de mesma nota fiscal".
+
+REGRAS DE FORMATAÇÃO E INTEGRIDADE DO DOCUMENTO:
+- Se o campo "danfe" de um registro for null, significa que a nota fiscal não foi informada; NESSE CASO, NÃO mencione DANFE/nota fiscal alguma para aquele registro e NÃO diga que a informação "não foi informada" — apenas cite o valor de aquisição normalmente, omitindo naturalmente essa referência da frase.
+- Da mesma forma, quando "danfe_vigente_na_epoca" ou "danfe_reposicao_seguinte" (nos eventos de elevação sem reposição de estoque) forem null, siga a mesma orientação: NÃO mencione o número do documento e NÃO diga que ele "não foi informado" — apenas construa a frase naturalmente sem essa referência.
+- É TERMINANTEMENTE PROIBIDO inventar, arredondar de forma diferente, estimar ou alterar qualquer valor monetário, percentual, data ou número de DANFE. Utilize EXCLUSIVAMENTE os dados fornecidos no "JSON DE DADOS REAIS".
 - NUNCA utilize as palavras "absoluto" ou "absoluta" no texto gerado. Toda a análise de lucro e margem deve ser referida exclusivamente como "estimada".
-- NÃO UTILIZE FORMATAÇÃO MARKDOWN (Proibido o uso de **asteriscos** para negrito ou # para títulos). Todo o texto gerado deve ser TEXTO SIMPLES (Plain Text) pois será copiado diretamente para o Microsoft Word e a formatação Markdown atrapalhará o preenchimento.
+- NÃO UTILIZE FORMATAÇÃO MARKDOWN (proibido o uso de **asteriscos** para negrito ou # para títulos), EXCETO os marcadores "•" para os tópicos, que devem ser mantidos. Todo o restante do texto deve ser TEXTO SIMPLES (Plain Text), pois será copiado diretamente para o Microsoft Word.
+- Mantenha o tom estritamente formal e jurídico, idêntico ao modelo, tanto na introdução/conclusão quanto nos tópicos de cada produto.
 
-Mantenha o tom estritamente formal e jurídico, idêntico ao modelo. Traga como resposta APENAS o texto completo do Auto de Infração finalizado.
+=== JSON DE DADOS REAIS (ÚNICA FONTE DE VALORES, DATAS E NÚMEROS DE DANFE PERMITIDA) ===
+${JSON.stringify(dadosPorProduto, null, 2)}
+=== FIM DO JSON DE DADOS REAIS ===
 
-MODELO A SEGUIR:
-${textoModeloIA}`;
+Traga como resposta APENAS o texto completo do Auto de Infração finalizado, seguindo rigorosamente o MODELO GERAL DO DOCUMENTO com os trechos entre colchetes devidamente preenchidos.`;
 
         const modelosParaTentar = ['gemini-2.5-flash'];
         let textoGerado = "";
@@ -1134,7 +1249,7 @@ ${textoModeloIA}`;
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: promptInstrucoes }] }],
-                        generationConfig: { temperature: 0.2 } // Baixa temperatura
+                        generationConfig: { temperature: 0.1 } 
                     })
                 });
                 
@@ -1150,7 +1265,6 @@ ${textoModeloIA}`;
             }
         }
 
-        // Exibe o resultado e libera o botão de copiar
         if (sucesso) {
             document.getElementById('textoResultadoIA').value = textoGerado;
             document.getElementById('btnCopiarIA').style.display = 'inline-block';
