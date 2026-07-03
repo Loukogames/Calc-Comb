@@ -377,6 +377,7 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             page-break-inside: avoid;
             break-inside: avoid;
+            overflow: hidden;
         }
         .grafico-titulo {
             margin: 0 0 15px 0;
@@ -389,6 +390,12 @@
             position: relative;
             height: 350px;
             width: 100%;
+            overflow: hidden;
+        }
+        .grafico-canvas-wrapper canvas {
+            display: block;
+            width: 100% !important;
+            max-width: 100% !important;
         }
         .grafico-sem-dados {
             text-align: center;
@@ -467,10 +474,12 @@
 
             .container {
                 max-width: 100%;
+                width: 100%;
                 margin: 0;
                 padding: 0;
                 box-shadow: none;
                 border-radius: 0;
+                overflow: visible;
             }
 
             .no-print {
@@ -605,6 +614,8 @@
                 margin-top: 15px;
                 padding-top: 15px;
                 page-break-before: always;
+                width: 100%;
+                overflow: visible;
             }
 
             #graficosContainer h3 {
@@ -614,16 +625,38 @@
             }
 
             .grafico-card {
+                display: block;
+                width: 100%;
+                max-width: 100%;
                 box-shadow: none;
                 border: 1px solid #000;
                 page-break-inside: avoid;
+                break-inside: avoid;
                 margin-bottom: 20px;
-                padding: 15px;
+                padding: 12px;
+                overflow: hidden;
+            }
+
+            .grafico-titulo {
+                margin-bottom: 10px;
             }
 
             .grafico-canvas-wrapper {
+                display: block;
+                position: relative;
+                width: 100% !important;
+                max-width: 100% !important;
                 height: 250px !important;
-                width: 100%;
+                min-height: 250px !important;
+                overflow: hidden !important;
+            }
+
+            .grafico-canvas-wrapper canvas {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 250px !important;
+                max-height: 250px !important;
             }
 
             /* Paginação */
