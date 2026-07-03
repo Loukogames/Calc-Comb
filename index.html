@@ -9,26 +9,33 @@
     <!-- ========================================================= -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Documentos - Posto de Combustível</title>
-    
+
     <!-- Biblioteca de Criptografia AES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <!-- Biblioteca de Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
             --primary-color: #1f4e78;
             --bg-light: #f9fbfd;
             --border-color: #d9d9d9;
             --row-group-bg: #eaeaea;
         }
+
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
             padding: 20px;
             background-color: #f5f5f5;
             color: #333;
         }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -37,87 +44,316 @@
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        
+
         /* Cabeçalho */
-        .sheet-header { margin-bottom: 25px; }
-        .header-table { width: 100%; border-collapse: collapse; border: none; margin-bottom: 10px; }
-        .header-table td { border: none; padding: 0; vertical-align: middle; }
-        .header-img-left { width: 25%; text-align: left; }
-        .header-title-cell { width: 50%; text-align: center; }
-        .header-img-right { width: 25%; text-align: right; }
-        .sheet-header h2 { margin: 0; color: var(--primary-color); font-size: 1.2em; }
-        .sheet-header h3 { margin: 5px 0 0 0; font-weight: normal; color: #555; font-size: 1.2em; text-align: center; }
-        .notificacao-input {
-            font-size: 1em; font-weight: bold; color: var(--primary-color); border: none;
-            border-bottom: 2px dashed #999; text-align: left; width: 280px; background: transparent; padding-left: 4px;
+        .sheet-header { 
+            margin-bottom: 25px; 
         }
-        .notificacao-input:focus { outline: none; border-bottom: 2px solid var(--primary-color); }
-        .print-notificacao { display: none; }
-        .header-img { height: 60px; max-width: 100%; object-fit: contain; }
-        
+        .header-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            border: none; 
+            margin-bottom: 10px; 
+        }
+        .header-table td { 
+            border: none; 
+            padding: 0; 
+            vertical-align: middle; 
+        }
+        .header-img-left { 
+            width: 25%; 
+            text-align: left; 
+        }
+        .header-title-cell { 
+            width: 50%; 
+            text-align: center; 
+        }
+        .header-img-right { 
+            width: 25%; 
+            text-align: right; 
+        }
+        .sheet-header h2 { 
+            margin: 0; 
+            color: var(--primary-color); 
+            font-size: 1.2em; 
+        }
+        .sheet-header h3 { 
+            margin: 5px 0 0 0; 
+            font-weight: normal; 
+            color: #555; 
+            font-size: 1.2em; 
+            text-align: center; 
+        }
+        .notificacao-input {
+            font-size: 1em; 
+            font-weight: bold; 
+            color: var(--primary-color); 
+            border: none;
+            border-bottom: 2px dashed #999; 
+            text-align: left; 
+            width: 280px; 
+            background: transparent; 
+            padding-left: 4px;
+        }
+        .notificacao-input:focus { 
+            outline: none; 
+            border-bottom: 2px solid var(--primary-color); 
+        }
+        .print-notificacao { 
+            display: none; 
+        }
+        .header-img { 
+            height: 60px; 
+            max-width: 100%; 
+            object-fit: contain; 
+        }
+
+        /* Campos para impressão (texto) */
+        .print-value { 
+            display: none; 
+        }
+
         /* Campos da Empresa */
         .info-grid {
-            display: table; width: 100%; margin-bottom: 25px; border: 1px solid var(--border-color);
-            background-color: var(--bg-light); box-sizing: border-box;
+            display: table; 
+            width: 100%; 
+            margin-bottom: 25px; 
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-light); 
+            box-sizing: border-box;
         }
-        .info-row { display: table-row; }
-        .info-cell { display: table-cell; padding: 10px; font-size: 0.95em; vertical-align: middle; }
-        .info-cell label { font-weight: bold; color: #444; }
-        .info-cell input { width: 80%; border: none; background: transparent; border-bottom: 1px dashed #999; padding: 2px 5px; font-size: 1em; }
-        .info-cell input:focus { outline: none; border-bottom: 1px solid var(--primary-color); }
-        
+        .info-row { 
+            display: table-row; 
+        }
+        .info-cell { 
+            display: table-cell; 
+            padding: 10px; 
+            font-size: 0.95em; 
+            vertical-align: middle; 
+        }
+        .info-cell label { 
+            font-weight: bold; 
+            color: #444; 
+        }
+        .info-cell input { 
+            width: 80%; 
+            border: none; 
+            background: transparent; 
+            border-bottom: 1px dashed #999; 
+            padding: 2px 5px; 
+            font-size: 1em; 
+        }
+        .info-cell input:focus { 
+            outline: none; 
+            border-bottom: 1px solid var(--primary-color); 
+        }
+
         /* Painéis de Lançamento */
-        .management-sections { display: table; width: 100%; margin-bottom: 30px; }
-        .management-row { display: table-row; }
-        .panel-cell { display: table-cell; width: 33.33%; padding-right: 20px; vertical-align: top; }
-        .panel-cell:last-child { width: 66.66%; padding-right: 0; }
-        .panel { background: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); height: 100%; box-sizing: border-box; }
-        .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 4px; }
-        .form-group input, .form-group select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        
-        .form-table-grid { width: 100%; border-collapse: collapse; border: none; }
-        .form-table-grid td { border: none; padding: 0 5px; vertical-align: top; }
-        .form-table-grid td:first-child { padding-left: 0; }
-        .form-table-grid td:last-child { padding-right: 0; }
-        
+        .management-sections { 
+            display: table; 
+            width: 100%; 
+            margin-bottom: 30px; 
+        }
+        .management-row { 
+            display: table-row; 
+        }
+        .panel-cell { 
+            display: table-cell; 
+            width: 33.33%; 
+            padding-right: 20px; 
+            vertical-align: top; 
+        }
+        .panel-cell:last-child { 
+            width: 66.66%; 
+            padding-right: 0; 
+        }
+        .panel { 
+            background: #fff; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            padding: 15px; 
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05); 
+            height: 100%; 
+            box-sizing: border-box; 
+        }
+        .panel h4 { 
+            margin-top: 0; 
+            margin-bottom: 15px; 
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--primary-color); 
+            padding-bottom: 5px; 
+        }
+        .form-group { 
+            margin-bottom: 12px; 
+        }
+        .form-group label { 
+            display: block; 
+            font-size: 0.85em; 
+            font-weight: bold; 
+            margin-bottom: 4px; 
+        }
+        .form-group input, 
+        .form-group select { 
+            width: 100%; 
+            padding: 6px 8px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+        }
+
+        .form-table-grid { 
+            width: 100%; 
+            border-collapse: collapse; 
+            border: none; 
+        }
+        .form-table-grid td { 
+            border: none; 
+            padding: 0 5px; 
+            vertical-align: top; 
+        }
+        .form-table-grid td:first-child { 
+            padding-left: 0; 
+        }
+        .form-table-grid td:last-child { 
+            padding-right: 0; 
+        }
+
         /* Botões */
-        button { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: opacity 0.2s; }
-        button:hover { opacity: 0.85; }
-        .btn-danger { background-color: #c0392b; }
-        .btn-success { background-color: #27ae60; }
-        .btn-edit { background-color: #f39c12; color: #fff; }
-        .btn-edit-mode { background-color: #f39c12 !important; color: #fff !important; }
-        .btn-report { background-color: #8e44ad; color: #fff; }
-        .btn-ai { background-color: #008080; color: #fff; }
-        .btn-copy { background-color: #34495e; color: #fff; }
-        
-        .toolbar { 
-            display: flex; justify-content: flex-end; align-items: center;
-            gap: 10px; flex-wrap: wrap; margin-bottom: 15px; 
+        button { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 8px 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 0.9em; 
+            transition: opacity 0.2s; 
+        }
+        button:hover { 
+            opacity: 0.85; 
+        }
+        .btn-danger { 
+            background-color: #c0392b; 
+        }
+        .btn-success { 
+            background-color: #27ae60; 
+        }
+        .btn-edit { 
+            background-color: #f39c12; 
+            color: #fff; 
+        }
+        .btn-edit-mode { 
+            background-color: #f39c12 !important; 
+            color: #fff !important; 
+        }
+        .btn-report { 
+            background-color: #8e44ad; 
+            color: #fff; 
+        }
+        .btn-ai { 
+            background-color: #008080; 
+            color: #fff; 
+        }
+        .btn-copy { 
+            background-color: #34495e; 
+            color: #fff; 
+        }
+
+        .toolbar {
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center;
+            gap: 10px; 
+            flex-wrap: wrap; 
+            margin-bottom: 15px;
         }
 
         /* Painel de Opções Adicionais */
         .options-panel {
-            background: #fff; padding: 15px; margin-bottom: 20px; border: 1px solid var(--border-color);
-            border-radius: 6px; display: flex; align-items: center; gap: 20px; font-size: 0.9em; font-weight: bold; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            background: #fff; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border: 1px solid var(--border-color);
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+            font-size: 0.9em; 
+            font-weight: bold; 
+            flex-wrap: wrap; 
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
-        .options-panel label { cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .panel-divider { border-left: 1px solid #ddd; height: 25px; }
-        .select-compare { padding: 3px; font-size: 0.9em; border-radius: 4px; border: 1px solid #888; font-weight: normal; margin-left: 15px; }
+        .options-panel label { 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+        }
+        .panel-divider { 
+            border-left: 1px solid #ddd; 
+            height: 25px; 
+        }
+        .select-compare { 
+            padding: 3px; 
+            font-size: 0.9em; 
+            border-radius: 4px; 
+            border: 1px solid #888; 
+            font-weight: normal; 
+            margin-left: 15px; 
+        }
 
         /* Tabela Principal */
-        table.main-sheet-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 15px; }
-        table.main-sheet-table th, table.main-sheet-table td { border: 1px solid #7f7f7f; padding: 6px 4px; text-align: center; }
-        table.main-sheet-table th { background-color: #f2f2f2; color: #000; font-weight: bold; vertical-align: middle; }
-        table.main-sheet-table tr.product-header-row td { background-color: var(--row-group-bg); text-align: left !important; font-weight: bold; font-size: 1.05em; letter-spacing: 0.5px; padding-left: 10px !important; }
-        
-        .linha-incompleta { background-color: #ffe6e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .linha-selecionada td { background-color: #d0e8ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .media-row { background-color: #fdfdfd; font-weight: bold; }
-        .media-row td { border-top: 2px solid #555; border-bottom: 2px solid #555; }
-        .actions-cell { border: none !important; background: transparent !important; white-space: nowrap; }
+        table.main-sheet-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.85em; 
+            margin-top: 15px; 
+        }
+        table.main-sheet-table th, 
+        table.main-sheet-table td { 
+            border: 1px solid #7f7f7f; 
+            padding: 6px 4px; 
+            text-align: center; 
+        }
+        table.main-sheet-table th { 
+            background-color: #f2f2f2; 
+            color: #000; 
+            font-weight: bold; 
+            vertical-align: middle; 
+        }
+        table.main-sheet-table tr.product-header-row td { 
+            background-color: var(--row-group-bg); 
+            text-align: left !important; 
+            font-weight: bold; 
+            font-size: 1.05em; 
+            letter-spacing: 0.5px; 
+            padding-left: 10px !important; 
+        }
+
+        .linha-incompleta { 
+            background-color: #ffe6e6 !important; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+        }
+        .linha-selecionada td { 
+            background-color: #d0e8ff !important; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+        }
+        .media-row { 
+            background-color: #fdfdfd; 
+            font-weight: bold; 
+        }
+        .media-row td { 
+            border-top: 2px solid #555; 
+            border-bottom: 2px solid #555; 
+        }
+        .actions-cell { 
+            border: none !important; 
+            background: transparent !important; 
+            white-space: nowrap; 
+        }
 
         /* Gráficos de Evolução */
         #graficosContainer {
@@ -160,38 +396,243 @@
             padding: 15px;
             font-style: italic;
         }
-        
+
         /* Modal IA */
         .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0,0,0,0.6); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .modal-overlay.active { 
+            display: flex; 
         }
         .modal-content {
-            background: #fff; width: 80%; max-width: 900px; padding: 25px; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column;
+            background: #fff; 
+            width: 80%; 
+            max-width: 900px; 
+            padding: 25px; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            max-height: 90vh; 
+            display: flex; 
+            flex-direction: column;
         }
-        .modal-content h3 { margin-top: 0; color: var(--primary-color); display: flex; justify-content: space-between; }
-        .modal-content textarea { width: 100%; height: 400px; padding: 10px; margin-top: 15px; border: 1px solid #ccc; font-family: Arial, sans-serif; font-size: 14px; box-sizing: border-box; resize: vertical; }
+        .modal-content h3 { 
+            margin-top: 0; 
+            color: var(--primary-color); 
+            display: flex; 
+            justify-content: space-between; 
+        }
+        .modal-content textarea { 
+            width: 100%; 
+            height: 400px; 
+            padding: 10px; 
+            margin-top: 15px; 
+            border: 1px solid #ccc; 
+            font-family: Arial, sans-serif; 
+            font-size: 14px; 
+            box-sizing: border-box; 
+            resize: vertical; 
+        }
 
+        /* ========================================== */
+        /* ESTILOS DE IMPRESSÃO */
+        /* ========================================== */
         @media print {
-            @page { margin: 15mm 10mm; }
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; padding: 0; max-width: 100%; }
-            .no-print { display: none !important; }
-            .info-cell input { border-bottom: none; }
-            .notificacao-input { display: none !important; }
-            .print-notificacao { display: inline !important; }
-            table.main-sheet-table { font-size: 9pt; }
-            thead { display: table-row-group; }
-            table.main-sheet-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            table.main-sheet-table tr.product-header-row td { background-color: #e5e5e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .media-row td { border-top: 2px solid #000; border-bottom: 2px solid #000; }
-            .linha-selecionada td { background-color: transparent !important; }
+            @page {
+                size: A4 landscape;
+                margin: 10mm 8mm;
+            }
 
-            /* Gráficos na impressão */
-            #graficosContainer { border-top: 2px solid #000; page-break-before: always; }
-            .grafico-card { box-shadow: none; border: 1px solid #999; }
-            .grafico-canvas-wrapper { height: 280px !important; }
+            * {
+                margin: 0;
+                padding: 0;
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            /* ===== IMAGENS DO CABEÇALHO NA IMPRESSÃO ===== */
+            .header-img {
+                display: inline-block !important;
+                height: 55px !important;
+                max-width: 100% !important;
+                object-fit: contain;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .header-table {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .header-img-left {
+                width: 25%;
+                text-align: left;
+                vertical-align: middle;
+            }
+
+            .header-img-right {
+                width: 25%;
+                text-align: right;
+                vertical-align: middle;
+            }
+
+            .header-title-cell {
+                width: 50%;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            /* Mostrar dados na impressão */
+            .info-cell input {
+                display: none !important;
+            }
+
+            .info-cell .print-value {
+                display: inline !important;
+                font-weight: normal;
+                color: #000;
+                margin: 0;
+                padding: 0;
+            }
+
+            .notificacao-input {
+                display: none !important;
+            }
+
+            .print-notificacao {
+                display: inline !important;
+            }
+
+            /* Cabeçalho */
+            .sheet-header {
+                margin-bottom: 15px;
+                page-break-after: avoid;
+            }
+
+            .sheet-header h3 {
+                margin: 3px 0 0 0;
+                font-size: 1em;
+            }
+
+            /* Grid de Informações */
+            .info-grid {
+                margin-bottom: 15px;
+                page-break-inside: avoid;
+            }
+
+            .info-cell {
+                padding: 6px;
+                font-size: 0.85em;
+            }
+
+            .info-cell label {
+                font-weight: bold;
+                margin-right: 5px;
+            }
+
+            /* Tabela */
+            table.main-sheet-table {
+                width: 100%;
+                font-size: 8pt;
+                margin-top: 10px;
+                border-collapse: collapse;
+            }
+
+            table.main-sheet-table th,
+            table.main-sheet-table td {
+                border: 1px solid #000;
+                padding: 3px 2px;
+                text-align: center;
+            }
+
+            table.main-sheet-table th {
+                background-color: #e5e5e5 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            table.main-sheet-table tr.product-header-row td {
+                background-color: #d9d9d9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding-left: 8px !important;
+            }
+
+            .media-row td {
+                border-top: 2px solid #000;
+                border-bottom: 2px solid #000;
+            }
+
+            .linha-selecionada td {
+                background-color: transparent !important;
+            }
+
+            .actions-cell {
+                display: none !important;
+            }
+
+            /* Gráficos */
+            #graficosContainer {
+                border-top: 2px solid #000;
+                margin-top: 15px;
+                padding-top: 15px;
+                page-break-before: always;
+            }
+
+            #graficosContainer h3 {
+                margin-bottom: 15px;
+                font-size: 1em;
+                border-bottom: 2px solid #000;
+            }
+
+            .grafico-card {
+                box-shadow: none;
+                border: 1px solid #000;
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+                padding: 15px;
+            }
+
+            .grafico-canvas-wrapper {
+                height: 250px !important;
+                width: 100%;
+            }
+
+            /* Paginação */
+            @page {
+                @bottom-right {
+                    content: counter(page) "/" counter(pages);
+                    font-size: 8pt;
+                }
+            }
         }
     </style>
 </head>
@@ -201,14 +642,22 @@
     <div class="sheet-header">
         <table class="header-table">
             <tr>
-                <td class="header-img-left"></td>
+                <td class="header-img-left">
+                    <!-- IMAGEM 01 (esquerda): tenta "image 01.png", depois "image_01.png", depois oculta -->
+                    <img src="image 01.png" alt="Imagem 01" class="header-img"
+                         onerror="if(!this.dataset.t){this.dataset.t=1;this.src='image_01.png';}else if(this.dataset.t==1){this.dataset.t=2;this.src='image01.png';}else{this.style.display='none';}">
+                </td>
                 <td class="header-title-cell">
                     <h2>Análise de Documentos Relativo a Notificação</h2>
                     <div style="margin-top: 8px; font-size: 1.1em; font-weight: bold; color: var(--primary-color);">
                         n° <span id="notificacaoNumSpan" class="print-notificacao"></span><input type="text" id="notificacaoNum" class="notificacao-input no-print" placeholder="Ex: 423/2026">
                     </div>
                 </td>
-                <td class="header-img-right"></td>
+                <td class="header-img-right">
+                    <!-- IMAGEM 02 (direita): tenta "image 02.png", depois "image_02.png", depois oculta -->
+                    <img src="image 02.png" alt="Imagem 02" class="header-img"
+                         onerror="if(!this.dataset.t){this.dataset.t=1;this.src='image_02.png';}else if(this.dataset.t==1){this.dataset.t=2;this.src='image02.png';}else{this.style.display='none';}">
+                </td>
             </tr>
         </table>
         <h3>Dados do Estabelecimento Comercial</h3>
@@ -216,15 +665,35 @@
 
     <div class="info-grid">
         <div class="info-row">
-            <div class="info-cell" style="width: 50%;"><label>Razão Social: </label><input type="text" id="razaoSocial" value=""></div>
-            <div class="info-cell" style="width: 50%;"><label>CNPJ n°: </label><input type="text" id="cnpj" value=""></div>
+            <div class="info-cell" style="width: 50%;">
+                <label>Razão Social: </label>
+                <input type="text" id="razaoSocial" value="" class="no-print">
+                <span id="razaoSocialPrint" class="print-value"></span>
+            </div>
+            <div class="info-cell" style="width: 50%;">
+                <label>CNPJ n°: </label>
+                <input type="text" id="cnpj" value="" class="no-print">
+                <span id="cnpjPrint" class="print-value"></span>
+            </div>
         </div>
         <div class="info-row">
-            <div class="info-cell" colspan="2"><label>Endereço: </label><input type="text" id="endereco" value="" style="width: 90%;"></div>
+            <div class="info-cell" colspan="2">
+                <label>Endereço: </label>
+                <input type="text" id="endereco" value="" style="width: 90%;" class="no-print">
+                <span id="enderecoPrint" class="print-value"></span>
+            </div>
         </div>
         <div class="info-row">
-            <div class="info-cell" style="width: 50%;"><label>Contato: </label><input type="text" id="contato" value=""></div>
-            <div class="info-cell" style="width: 50%;"><label>Produto: </label><input type="text" id="produtoHeader" value=""></div>
+            <div class="info-cell" style="width: 50%;">
+                <label>Contato: </label>
+                <input type="text" id="contato" value="" class="no-print">
+                <span id="contatoPrint" class="print-value"></span>
+            </div>
+            <div class="info-cell" style="width: 50%;">
+                <label>Produto: </label>
+                <input type="text" id="produtoHeader" value="" class="no-print">
+                <span id="produtoHeaderPrint" class="print-value"></span>
+            </div>
         </div>
     </div>
 
@@ -253,7 +722,7 @@
                                 <option value="">-- Escolha o produto --</option>
                             </select>
                         </div>
-                        
+
                         <table class="form-table-grid" style="margin-bottom: 10px;">
                             <tr>
                                 <td style="width: 33.33%;">
@@ -281,7 +750,7 @@
                                 </td>
                             </tr>
                         </table>
-                        
+
                         <div style="margin-top: 15px;">
                             <button type="submit" id="btnSubmitEntry">Lançar Dados na Tabela</button>
                             <button type="button" class="btn-danger no-print" style="margin-left:10px; display:none;" id="btnCancelEdit" onclick="cancelarEdicao()">Cancelar Edição</button>
@@ -312,7 +781,7 @@
         <label id="printGraficosOption" title="Inclui os gráficos exibidos junto com a planilha ao imprimir." style="display:none;">
             <input type="checkbox" id="chkImprimirGraficos" onchange="toggleImprimirGraficos()"> 🖨️ Incluir na Impressão
         </label>
-        
+
         <div style="flex-grow: 1; text-align: right;">
             <input type="password" id="geminiApiKey" placeholder="Chave de API Gemini" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
         </div>
@@ -341,8 +810,8 @@
 </div>
 
 <!-- Modal IA -->
-<div class="modal-overlay" id="modalIA">
-    <div class="modal-content">
+<div class="modal-overlay" id="modalIA" onclick="fecharModalIAClique(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
         <h3>
             Geração de Auto de Infração - IA
             <button class="btn-danger" style="padding: 4px 10px;" onclick="fecharModalIA()">X</button>
@@ -350,9 +819,10 @@
         <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #555;">
             Os dados selecionados na tabela em <b>azul</b> serão enviados para o Gemini. Certifique-se de ter escolhido um período como <b>Base</b> para cada produto que deseja analisar.
         </p>
-        
-        <div style="display: flex; align-items: center; gap: 10px;">
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <button class="btn-success" onclick="gerarTextoIA()" id="btnGerarIA">✨ Gerar Texto</button>
+            <button class="btn-ai" onclick="refinarTextoIA()" id="btnRefinarIA" style="display:none;">🔧 Refinar</button>
             <button class="btn-copy" onclick="copiarTextoIA()" id="btnCopiarIA" style="display:none;">📋 Copiar Texto</button>
             <span id="loadingIA" style="display:none; color: var(--primary-color); font-weight: bold;">Processando com IA... Aguarde.</span>
         </div>
@@ -381,21 +851,50 @@
         notificacaoSpan.textContent = this.value;
     });
 
+    // -------------------------------------------------------------------------
+    // SINCRONIZAÇÃO DOS CAMPOS PARA IMPRESSÃO
+    // -------------------------------------------------------------------------
+    const camposParaImpressao = [
+        { input: 'razaoSocial', span: 'razaoSocialPrint' },
+        { input: 'cnpj', span: 'cnpjPrint' },
+        { input: 'endereco', span: 'enderecoPrint' },
+        { input: 'contato', span: 'contatoPrint' },
+        { input: 'produtoHeader', span: 'produtoHeaderPrint' },
+    ];
+
+    function sincronizarCampoParaImpressao(inputId, spanId) {
+        const inp = document.getElementById(inputId);
+        const spn = document.getElementById(spanId);
+        if (!inp || !spn) return;
+        spn.textContent = inp.value || '';
+    }
+
+    function sincronizarTodosCamposParaImpressao() {
+        camposParaImpressao.forEach(c => sincronizarCampoParaImpressao(c.input, c.span));
+    }
+
+    camposParaImpressao.forEach(c => {
+        const inp = document.getElementById(c.input);
+        if (inp) inp.addEventListener('input', () => sincronizarCampoParaImpressao(c.input, c.span));
+    });
+
+    sincronizarTodosCamposParaImpressao();
+
     // Lógicas e Cálculos mantidos originais
     function toggleComparar() {
         if (document.getElementById('chkComparar').checked) document.getElementById('chkQtdLitros').checked = true;
         atualizarTabela();
     }
-    
+
     function toggleQtdLitros() {
-        if (!document.getElementById('chkQtdLitros').checked) document.getElementById('chkComparar').checked = false; 
+        if (!document.getElementById('chkQtdLitros').checked) document.getElementById('chkComparar').checked = false;
         atualizarTabela();
     }
 
     function getGradientStyle(val, min, max) {
         if (min === max || val === undefined || isNaN(val)) return '';
-        let ratio = (val - min) / (max - min); 
-        let hue = 120 - (ratio * 120); 
+        let ratio = (val - min) / (max - min);
+        let hue = 120 - (ratio * 120);
         return `background-color: hsl(${hue}, 80%, 85%) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;`;
     }
 
@@ -426,10 +925,10 @@
     function recalcularProduto(nomeProduto) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         if (!prod || prod.linhas.length === 0) return;
-        
+
         prod.linhas.sort((a, b) => parseDate(a.periodo) - parseDate(b.periodo));
         const margemBaseD = prod.linhas[0].margemD || 0;
-        
+
         prod.linhas.forEach(l => {
             l.aumentoReducaoE = (l.margemD || 0) - margemBaseD;
             l.percentualReajuste = l.aquisicao > 0 ? (l.venda / l.aquisicao) - 1 : 0;
@@ -481,8 +980,8 @@
             aumentoReducaoE: 0,
             percentualReajuste: 0,
             qtdLitros: qtdLitros,
-            selecionado: false, 
-            isBaseIA: false     
+            selecionado: false,
+            isBaseIA: false
         };
 
         if (editandoInfo) {
@@ -509,7 +1008,7 @@
     function editarLinha(nomeProduto, idLinha) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         const font_linha = prod.linhas.find(l => l.id === idLinha);
-        
+
         selectProduct.value = nomeProduto;
         document.getElementById('docId').value = font_linha.docId;
         document.getElementById('periodo').value = font_linha.periodo;
@@ -517,7 +1016,7 @@
         document.getElementById('frete').value = font_linha.frete > 0 ? font_linha.frete : '';
         document.getElementById('venda').value = font_linha.isVendaVazia ? '' : font_linha.venda;
         document.getElementById('qtdLitros').value = (font_linha.qtdLitros && font_linha.qtdLitros > 0) ? font_linha.qtdLitros : '';
-        
+
         editandoInfo = { nomeProduto, idLinha };
         document.getElementById('btnSubmitEntry').textContent = "Salvar Edição";
         document.getElementById('btnSubmitEntry').classList.add('btn-edit-mode');
@@ -529,11 +1028,11 @@
         document.getElementById('btnSubmitEntry').textContent = "Lançar Dados na Tabela";
         document.getElementById('btnSubmitEntry').classList.remove('btn-edit-mode');
         document.getElementById('btnCancelEdit').style.display = 'none';
-        if(limparForm) document.getElementById('entryForm').reset();
+        if (limparForm) document.getElementById('entryForm').reset();
     }
 
     function removerLinha(nomeProduto, idLinha) {
-        if(confirm('Tem certeza que deseja apagar este lançamento?')) {
+        if (confirm('Tem certeza que deseja apagar este lançamento?')) {
             const prod = bancoDados.find(p => p.nome === nomeProduto);
             if (prod) {
                 prod.linhas = prod.linhas.filter(l => l.id !== idLinha);
@@ -566,10 +1065,10 @@
 
     function setBaseIA(nomeProduto, idLinha) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
-        prod.linhas.forEach(l => l.isBaseIA = false); 
+        prod.linhas.forEach(l => l.isBaseIA = false);
         const linha = prod.linhas.find(l => l.id === idLinha);
         linha.isBaseIA = true;
-        linha.selecionado = true; 
+        linha.selecionado = true;
         atualizarTabela();
     }
 
@@ -591,7 +1090,6 @@
             printOption.style.display = 'none';
             chkImprimir.checked = false;
             container.classList.add('no-print');
-            // Libera memória destruindo instâncias dos gráficos
             Object.values(chartInstances).forEach(c => c.destroy());
             chartInstances = {};
         }
@@ -610,7 +1108,6 @@
         const content = document.getElementById('graficosContent');
         content.innerHTML = '';
 
-        // Destroi instâncias anteriores antes de recriar
         Object.values(chartInstances).forEach(c => c.destroy());
         chartInstances = {};
 
@@ -623,7 +1120,7 @@
 
         bancoDados.forEach((prod, idx) => {
             const linhasValidas = (prod.linhas || []).filter(l => !l.isAquisicaoVazia && !l.isVendaVazia);
-            
+
             const card = document.createElement('div');
             card.className = 'grafico-card';
 
@@ -767,11 +1264,13 @@
 
         let temFrete = false, temLitros = false;
         bancoDados.forEach(p => {
-            if(p.linhas) p.linhas.forEach(l => { 
-                if (l.frete > 0) temFrete = true; 
+            if(p.linhas) p.linhas.forEach(l => {
+                if (l.frete > 0) temFrete = true;
                 if (l.qtdLitros && l.qtdLitros > 0) temLitros = true;
             });
         });
+
+        const labelMedia = (showQtdLitros || temLitros) ? 'MÉDIA / TOTAIS' : 'MÉDIA';
 
         const clsLitrosPrint = showQtdLitros ? "" : "no-print";
         let totalColunas = 11;
@@ -804,7 +1303,7 @@
         if (showQtdLitros && showComparar) {
             theadHTML += `<th rowspan="2" style="width: 10%;">COMPARAÇÃO<br>DE PERÍODO</th>`;
         }
-        
+
         theadHTML += `
                 <th rowspan="2" class="no-print" style="width: 5px; border: none; background: transparent;"></th>
             </tr>
@@ -879,10 +1378,10 @@
                 let aumE = Number(lin.aumentoReducaoE) || 0;
                 let colCorE = aumE > 0 ? 'green' : (aumE < 0 ? 'red' : 'black');
                 let tdFrete = temFrete ? `<td>${lin.frete > 0 ? fMoeda(lin.frete, false) : '-'}</td>` : '';
-                
+
                 let qLitros = Number(lin.qtdLitros) || 0; sumQtdLitros += qLitros;
                 let tdLitrosHtml = temLitros ? `<td class="${clsLitrosPrint}">${qLitros > 0 ? qLitros.toLocaleString('pt-BR') : '-'}</td>` : '';
-                
+
                 let tdQtd = '', tdComp = '';
                 if (showQtdLitros) {
                     let lucroTotal = isVazia ? 0 : (qLitros * lc);
@@ -891,7 +1390,7 @@
                 }
 
                 if (showQtdLitros && showComparar) {
-                    if (isVazia || !baseRow || qLitros === 0) { tdComp = `<td>-</td>`; } 
+                    if (isVazia || !baseRow || qLitros === 0) { tdComp = `<td>-</td>`; }
                     else {
                         let diff = (qLitros * lc) - ((Number(baseRow.qtdLitros)||0) * (Number(baseRow.lucroBrutoC)||0));
                         sumDiff += diff;
@@ -941,14 +1440,14 @@
                 trMedia.className = 'media-row';
                 let tdFreteMedia = temFrete ? `<td>${avgFrete > 0 ? fMoeda(avgFrete, false) : '-'}</td>` : '';
                 let tdLitrosMedia = temLitros ? `<td class="${clsLitrosPrint}">${sumQtdLitros > 0 ? sumQtdLitros.toLocaleString('pt-BR') : '-'}</td>` : '';
-                
+
                 let tdQtdMedia = '', tdCompMedia = '';
                 if (showQtdLitros) tdQtdMedia = `<td style="color: var(--primary-color);"><b>Σ TOTAL:</b><br>${fMoeda2(sumLucroTotal, false)}</td>`;
                 if (showQtdLitros && showComparar) tdCompMedia = `<td style="color: ${sumDiff > 0 ? 'green' : (sumDiff < 0 ? 'red' : 'black')};"><b>Σ DIF:</b><br>${sumDiff > 0 ? '+' : ''}${fMoeda2(sumDiff, false)}</td>`;
 
                 trMedia.innerHTML = `
                     <td class="no-print" colspan="2"></td>
-                    <td>MÉDIA / TOTAIS</td>
+                    <td>${labelMedia}</td>
                     <td></td>
                     <td>${fMoeda(avgAquisicao, false)}</td>
                     ${tdFreteMedia}
@@ -966,35 +1465,52 @@
             }
         });
 
-        // Computa novamente os gráficos caso estejam visíveis
         if (document.getElementById('chkGraficos') && document.getElementById('chkGraficos').checked) {
             renderGraficos();
         }
     }
 
     // -------------------------------------------------------------------------
-    // INTEGRAÇÃO COM IA GEMINI E COPIAR TEXTO
+    // INTEGRAÇÃO COM IA GEMINI
     // -------------------------------------------------------------------------
     function abrirModalIA() {
-        document.getElementById('modalIA').style.display = 'flex';
-        document.getElementById('btnCopiarIA').style.display = 'none'; 
+        document.getElementById('modalIA').classList.add('active');
+        document.getElementById('btnCopiarIA').style.display = 'none';
+        if (document.getElementById('textoResultadoIA').value.trim() !== "") {
+            document.getElementById('btnRefinarIA').style.display = 'inline-block';
+            document.getElementById('btnCopiarIA').style.display = 'inline-block';
+        } else {
+            document.getElementById('btnRefinarIA').style.display = 'none';
+        }
     }
 
     function fecharModalIA() {
-        document.getElementById('modalIA').style.display = 'none';
+        document.getElementById('modalIA').classList.remove('active');
     }
+
+    function fecharModalIAClique(event) {
+        if (event.target.id === 'modalIA') {
+            fecharModalIA();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fecharModalIA();
+        }
+    });
 
     function copiarTextoIA() {
         const texto = document.getElementById('textoResultadoIA').value;
         if (!texto) return;
-        
+
         navigator.clipboard.writeText(texto).then(() => {
             const btn = document.getElementById('btnCopiarIA');
             const textoOriginal = btn.innerHTML;
             btn.innerHTML = "✅ Copiado!";
             btn.style.backgroundColor = "#27ae60";
-            setTimeout(() => { 
-                btn.innerHTML = textoOriginal; 
+            setTimeout(() => {
+                btn.innerHTML = textoOriginal;
                 btn.style.backgroundColor = "#34495e";
             }, 2500);
         }).catch(err => {
@@ -1002,11 +1518,6 @@
         });
     }
 
-    // -------------------------------------------------------------------------
-    // GERAÇÃO DO TEXTO DE ANÁLISE (IA)
-    // -------------------------------------------------------------------------
-
-    // Modelo de referência de ESTILO fornecido pelo usuário (usado apenas como exemplo de formatação para a IA)
     const MODELO_ESTILO_IA = `Gasolina Comum:
 • Elevação de preços sem reposição de estoques: Constatou-se que o preço de venda ao consumidor praticado em 05/03/2026, no valor de R$ 6,60, foi majorado para R$ 6,99 em 10/03/2026. Considerando que a última aquisição havia ocorrido em 04/03/2026 (DANFE nº 211648) e a nova compra ocorreu somente em 11/03/2026 (DANFE nº 212068), a elevação configura prática abusiva. Novamente, verificou-se que o preço de venda de R$ 7,20, praticado em 14/03/2026, foi majorado para R$ 7,39 em 19/03/2026, sendo que a aquisição anterior datava de 13/03/2026 (DANFE nº 212186) e a reposição seguinte ocorreu apenas em 21/03/2026 (DANFE nº 212720).
 • Elevação de preços e ampliação de margem: Em 02/02/2026, o produto era adquirido a R$ 5,2396 (DANFE nº 209862) e comercializado a R$ 6,60, com margem de lucro bruta estimada de R$ 1,20 por unidade. Em 16/04/2026, o produto foi comprado por R$ 5,9305 (DANFE nº 213950) e vendido por R$ 6,89, passando a margem de lucro bruta estimada para R$ 1,27 por unidade.
@@ -1032,8 +1543,8 @@ Diesel S10:
         const formatarPctIA = (v) => ((Number(v)||0) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%';
 
         let dadosPorProduto = [];
-        let temFreteSelecionado = false; 
-        let datasGlobaisDaPlanilha = []; 
+        let temFreteSelecionado = false;
+        let datasGlobaisDaPlanilha = [];
         let condicaoNaoRepasse = false;
         let condicaoEstoqueAntigo = false;
 
@@ -1047,7 +1558,6 @@ Diesel S10:
             if (linhasSel.length === 0) return;
             linhasSel.sort((a,b) => parseDate(a.periodo) - parseDate(b.periodo));
 
-            // 1) Cronologia completa com flags de irregularidades concisas entre períodos consecutivos
             let cronologia = [];
             for (let i = 0; i < linhasSel.length; i++) {
                 let l = linhasSel[i];
@@ -1061,19 +1571,16 @@ Diesel S10:
 
                 if (i > 0) {
                     let prev = linhasSel[i - 1];
-                    
-                    // Constatação 1: Ampliação da margem de lucro estimada
+
                     if (l.margemD > prev.margemD) {
                         analiseTransicao.ampliacao_margem = true;
                     }
-                    
-                    // Constatação 2: Não repasse de redução no custo (Custo caiu, mas venda se manteve ou subiu)
+
                     if (l.aquisicao < prev.aquisicao && l.venda >= prev.venda) {
                         analiseTransicao.nao_repasse_reducao_custo = true;
-                        condicaoNaoRepasse = true; 
+                        condicaoNaoRepasse = true;
                     }
 
-                    // Constatação 3: Elevação de preço em estoque antigo (Mesma DANFE, mas preço de venda subiu)
                     if (l.docId && prev.docId && l.docId.trim().toLowerCase() === prev.docId.trim().toLowerCase() && l.venda > prev.venda) {
                         analiseTransicao.elevacao_preco_estoque_antigo = true;
                     }
@@ -1090,7 +1597,6 @@ Diesel S10:
                 });
             }
 
-            // 2) Eventos de "venda sem reposição de estoque" 
             let eventosSemReposicao = [];
             for (let i = 1; i < linhasSel.length; i++) {
                 let curr = linhasSel[i];
@@ -1106,7 +1612,7 @@ Diesel S10:
                     }
 
                     if (ref && curr.venda > ref.venda) {
-                        condicaoEstoqueAntigo = true; 
+                        condicaoEstoqueAntigo = true;
 
                         let proxima = null;
                         for (let k = i + 1; k < linhasSel.length; k++) {
@@ -1142,7 +1648,6 @@ Diesel S10:
             return;
         }
 
-        // --- Calcula Data Inicial e Final GLOBALMENTE ---
         let textoPeriodo = "";
         if (datasGlobaisDaPlanilha.length > 0) {
             let dataMinTS = Math.min(...datasGlobaisDaPlanilha);
@@ -1152,13 +1657,11 @@ Diesel S10:
             textoPeriodo = ` no período compreendido entre ${dataMinStr} e ${dataMaxStr}`;
         }
 
-        // Configuração visual do botão gerando
         document.getElementById('btnGerarIA').disabled = true;
-        document.getElementById('btnCopiarIA').style.display = 'none'; 
+        document.getElementById('btnCopiarIA').style.display = 'none';
         document.getElementById('loadingIA').style.display = 'inline';
         document.getElementById('textoResultadoIA').value = "Processando informações e gerando texto. Isso pode levar alguns segundos...";
 
-        // --- Construção do Parágrafo Final de Conclusão ---
         let conclusaoFinalTexto = "procedeu à majoração indevida de suas margens de lucro brutas";
         if (condicaoNaoRepasse && condicaoEstoqueAntigo) {
             conclusaoFinalTexto += " (inclusive ao não repassar reduções no custo de aquisição) e à elevação de preços injustificada antes da reposição dos estoques antigos.";
@@ -1173,7 +1676,6 @@ Diesel S10:
         let fraseFrete = temFreteSelecionado ? " Ressalta-se que, para o cálculo das margens, foi descontado o valor do frete apresentado pela documentação comprobatória correspondente." : "";
         let fraseIntroEstoqueAntigo = condicaoEstoqueAntigo ? ", bem como configurou-se a elevação de preços antes da efetiva reposição de estoques" : "";
 
-        // Constrói o modelo final exato a ser preenchido pela IA
         let textoModeloIA = `No exercício das atribuições legais conferidas aos órgãos de proteção e defesa do consumidor, procedeu-se à análise dos documentos fiscais encaminhados pela empresa autuada, referentes às operações de compra e venda de combustíveis${textoPeriodo}.
 Foram objeto de análise os seguintes produtos:
 [LISTAR_PRODUTOS_AQUI]
@@ -1186,8 +1688,7 @@ Durante a análise, foram constatadas as seguintes irregularidades específicas 
 
 Diante dos elementos analisados, constatou-se que o reajuste aplicado ao preço final [PRODUTOS_CONSTATADOS_FINAL] não se limitou ao repasse dos custos de aquisição. Verificou-se que o estabelecimento ${conclusaoFinalTexto} Tal conduta extrapola a necessidade de recomposição de custos e configura prática abusiva de aumento arbitrário de preços ao consumidor, exigindo vantagem manifestamente excessiva, nos termos do Art. 39, incisos V e X, do Código de Defesa do Consumidor – Lei 8.078/1990.`;
 
-        // Prompt do sistema
-        const promptInstrucoes = `Você é um Auditor Fiscal especialista em Defesa do Consumidor (Procon). 
+        const promptInstrucoes = `Você é um Auditor Fiscal especialista em Defesa do Consumidor (Procon).
 Sua tarefa é redigir um Auto de Infração utilizando EXATAMENTE a ESTRUTURA GERAL fornecida no "MODELO GERAL DO DOCUMENTO" abaixo, preenchendo os trechos indicados entre colchetes.
 
 === MODELO GERAL DO DOCUMENTO (preencher os colchetes) ===
@@ -1249,10 +1750,87 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: promptInstrucoes }] }],
-                        generationConfig: { temperature: 0.1 } 
+                        generationConfig: { temperature: 0.1 }
                     })
                 });
-                
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                textoGerado = data.candidates[0].content.parts[0].text;
+                sucesso = true;
+                break;
+            } catch(e) {
+                ultimoErro = e.message;
+                console.warn(`Falha na tentativa com o modelo ${model}: ${ultimoErro}`);
+            }
+        }
+
+        if (sucesso) {
+            document.getElementById('textoResultadoIA').value = textoGerado;
+            document.getElementById('btnCopiarIA').style.display = 'inline-block';
+            document.getElementById('btnRefinarIA').style.display = 'inline-block';
+        } else {
+            document.getElementById('textoResultadoIA').value = "ERRO AO GERAR TEXTO: \n" + ultimoErro + "\n\nO modelo gemini-2.5-flash encontrou um erro. Verifique sua chave de API e se você possui o acesso/permissão a esse modelo no Google AI Studio.";
+        }
+
+        document.getElementById('btnGerarIA').disabled = false;
+        document.getElementById('loadingIA').style.display = 'none';
+    }
+
+    async function refinarTextoIA() {
+        const apiKey = document.getElementById('geminiApiKey').value.trim();
+        if(!apiKey) { alert("Por favor, insira a Chave da API do Gemini no campo correspondente (painel superior)."); return; }
+
+        const textoAtual = document.getElementById('textoResultadoIA').value.trim();
+        if(!textoAtual) { alert("Não há texto para ser refinado. Gere ou cole um texto na área abaixo primeiro."); return; }
+
+        document.getElementById('btnGerarIA').disabled = true;
+        document.getElementById('btnRefinarIA').disabled = true;
+        document.getElementById('btnCopiarIA').style.display = 'none';
+        document.getElementById('loadingIA').style.display = 'inline';
+        document.getElementById('loadingIA').textContent = "Refinando texto com IA... Aguarde.";
+
+        const promptRefinamento = `Reescreva o texto para integrar um Auto de Infração lavrado por órgão de fiscalização.
+
+Utilize linguagem técnico-jurídica, objetiva, impessoal e compatível com a redação de atos administrativos sancionatórios.
+
+Observe as seguintes diretrizes:
+
+Organize as informações em ordem cronológica e lógica.
+Elimine repetições e torne o texto conciso, preservando todos os dados relevantes.
+Utilize conectivos que garantam coerência e fluidez.
+Corrija integralmente a gramática, a ortografia, a pontuação e a concordância, observando a norma-padrão da língua portuguesa.
+Não altere valores, datas, percentuais ou demais informações fáticas.
+Descreva os fatos de forma técnica e objetiva, evitando conclusões categóricas sem fundamentação.
+Prefira expressões como "constatou-se", "verificou-se", "apurou-se", "evidenciou-se", "sem justificativa aparente", "em tese", "o que indica", "o que evidencia", em vez de afirmar diretamente a ocorrência da infração.
+Evite adjetivações e juízos de valor desnecessários.
+Redija em estilo compatível com documentos oficiais de fiscalização (PROCON, Ministério Público, ANP, Tribunais de Contas e demais órgãos administrativos).
+NÃO UTILIZE FORMATAÇÃO MARKDOWN (proibido o uso de **asteriscos** para negrito ou # para títulos), EXCETO os marcadores "•" para os tópicos. Todo o restante do texto deve ser TEXTO SIMPLES (Plain Text).
+O resultado deve estar pronto para ser inserido diretamente em um Auto de Infração, sem necessidade de edição.
+
+=== TEXTO ORIGINAL PARA REFINAMENTO ===
+${textoAtual}
+=== FIM DO TEXTO ORIGINAL ===
+
+Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou observações extras.`;
+
+        const modelosParaTentar = ['gemini-2.5-flash'];
+        let textoGerado = "";
+        let sucesso = false;
+        let ultimoErro = "";
+
+        for (let model of modelosParaTentar) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptRefinamento }] }],
+                        generationConfig: { temperature: 0.1 }
+                    })
+                });
+
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message);
 
@@ -1269,15 +1847,17 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
             document.getElementById('textoResultadoIA').value = textoGerado;
             document.getElementById('btnCopiarIA').style.display = 'inline-block';
         } else {
-            document.getElementById('textoResultadoIA').value = "ERRO AO GERAR TEXTO: \n" + ultimoErro + "\n\nO modelo gemini-2.5-flash encontrou um erro. Verifique sua chave de API e se você possui o acesso/permissão a esse modelo no Google AI Studio.";
+            alert("ERRO AO REFINAR TEXTO:\n" + ultimoErro);
         }
-        
+
         document.getElementById('btnGerarIA').disabled = false;
+        document.getElementById('btnRefinarIA').disabled = false;
         document.getElementById('loadingIA').style.display = 'none';
+        document.getElementById('loadingIA').textContent = "Processando com IA... Aguarde.";
     }
 
     // -------------------------------------------------------------------------
-    // DEMAIS FUNÇÕES ORIGINAIS (Salvar, Importar, etc)
+    // RELATÓRIO, SALVAR E IMPORTAR
     // -------------------------------------------------------------------------
     function gerarRelatorio() {
         if(bancoDados.length === 0) return alert("Não há dados cadastrados para gerar o relatório.");
@@ -1294,8 +1874,8 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
             if(!Array.isArray(prod.linhas)) return;
             prod.linhas.forEach(l => {
                 if(l.isAquisicaoVazia || l.isVendaVazia || !(Number(l.qtdLitros) > 0)) return;
-                
-                let dateStr = l.periodo || ''; 
+
+                let dateStr = l.periodo || '';
                 if(!dateStr.includes('/')) return;
                 let parts = dateStr.split('/');
                 if(parts.length !== 3) return;
@@ -1314,7 +1894,7 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                     let semanaMes = Math.ceil(diaMes / 7);
                     let nomeMes = mesesNomes[d.getMonth()];
                     let anoStr = d.getFullYear();
-                    
+
                     key = `${anoStr}-${String(d.getMonth() + 1).padStart(2, '0')}-W${semanaMes}`;
                     labelFormated = `Semana ${semanaMes} de ${nomeMes} de ${anoStr}`;
                 }
@@ -1325,7 +1905,7 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                 if(!relatorioDados[key].produtos[prod.nome]) {
                     relatorioDados[key].produtos[prod.nome] = { litros: 0, lucro: 0 };
                 }
-                
+
                 let qLitros = Number(l.qtdLitros);
                 let luc = Number(l.lucroBrutoC);
                 relatorioDados[key].produtos[prod.nome].litros += qLitros;
@@ -1372,18 +1952,18 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
         `;
 
         let totalGeralLucro = 0;
-        let periodosOrd = Object.keys(relatorioDados).sort(); 
+        let periodosOrd = Object.keys(relatorioDados).sort();
 
         periodosOrd.forEach(perKey => {
             let labelPer = relatorioDados[perKey].label;
             let prodsObj = relatorioDados[perKey].produtos;
             let produtosNoPeriodo = Object.keys(prodsObj).sort();
             let subTotalPeriodo = 0;
-            
+
             produtosNoPeriodo.forEach((prodName, idx) => {
                 let dados = prodsObj[prodName];
                 subTotalPeriodo += dados.lucro;
-                
+
                 html += `<tr>`;
                 if(idx === 0) {
                     html += `<td rowspan="${produtosNoPeriodo.length}" style="vertical-align:middle; font-weight:bold; background:#fdfdfd;">${labelPer}</td>`;
@@ -1394,7 +1974,7 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                     <td>R$ ${dados.lucro.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 </tr>`;
             });
-            
+
             totalGeralLucro += subTotalPeriodo;
             html += `<tr class="total-row">
                 <td colspan="3" style="text-align: right;"><b>Subtotal (${labelPer}):</b></td>
@@ -1439,7 +2019,7 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
 
         let jsonString = JSON.stringify(pacoteBackup, null, 2);
         const desejaSenha = confirm("Deseja proteger este arquivo de backup com uma SENHA?\n\n(OK = Sim. Cancelar = Salvar sem senha)");
-        
+
         if (desejaSenha) {
             const senha = prompt("🔒 Digite a senha para proteger o arquivo:");
             if (!senha) return alert("Operação cancelada.");
@@ -1451,13 +2031,13 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
         const blob = new Blob([jsonString], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const dlAnchorElem = document.createElement('a');
-        
+
         let txtNotif = pacoteBackup.notificacao || 'Combustivel';
         let numNotif = txtNotif.replace(/[^a-zA-Z0-9]/g, "_");
-        
+
         dlAnchorElem.href = url;
         dlAnchorElem.download = `Planilha_Notificacao_${numNotif}.json`;
-        
+
         document.body.appendChild(dlAnchorElem);
         dlAnchorElem.click();
         document.body.removeChild(dlAnchorElem);
@@ -1480,7 +2060,7 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                     dadosBrutos = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
                 }
                 if (dadosBrutos && Array.isArray(dadosBrutos.bancoDados)) {
-                    
+
                     const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ''; };
                     setVal('notificacaoNum', dadosBrutos.notificacao);
                     if(document.getElementById('notificacaoNumSpan')) document.getElementById('notificacaoNumSpan').textContent = dadosBrutos.notificacao || '';
@@ -1489,6 +2069,8 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                     setVal('endereco', dadosBrutos.endereco);
                     setVal('contato', dadosBrutos.contato);
                     setVal('produtoHeader', dadosBrutos.produtoHeader);
+
+                    sincronizarTodosCamposParaImpressao();
 
                     bancoDados = dadosBrutos.bancoDados;
                     bancoDados.forEach(p => {
@@ -1517,10 +2099,9 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
                         setChk('chkIndicador', false); setChk('chkQtdLitros', false); setChk('chkComparar', false);
                         setChk('chkGraficos', false); setChk('chkImprimirGraficos', false);
                     }
-                    
+
                     atualizarDropdown(); atualizarTabela();
 
-                    // Restaura estado visual dos gráficos, se aplicável
                     if (document.getElementById('chkGraficos').checked) {
                         toggleGraficos();
                         if (document.getElementById('chkImprimirGraficos').checked) toggleImprimirGraficos();
@@ -1535,7 +2116,12 @@ Traga como resposta APENAS o texto completo do Auto de Infração finalizado, se
     }
 
     function limparTudo() {
-        if (confirm('Atenção: Isso apagará todos os produtos e lançamentos. Deseja continuar?')) { bancoDados = []; atualizarDropdown(); atualizarTabela(); cancelarEdicao(); }
+        if (confirm('Atenção: Isso apagará todos os produtos e lançamentos. Deseja continuar?')) {
+            bancoDados = [];
+            atualizarDropdown();
+            atualizarTabela();
+            cancelarEdicao();
+        }
     }
 
     atualizarTabela();
