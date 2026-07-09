@@ -2220,11 +2220,11 @@ Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou ob
         const url = URL.createObjectURL(blob);
         const dlAnchorElem = document.createElement('a');
 
-        let txtNotif = pacoteBackup.notificacao || 'Combustivel';
-        let numNotif = txtNotif.replace(/[^a-zA-Z0-9]/g, "_");
+        let txtRazao = pacoteBackup.razaoSocial || 'Combustivel';
+        let nomeRazao = txtRazao.replace(/[^a-zA-Z0-9]/g, "_");
 
         dlAnchorElem.href = url;
-        dlAnchorElem.download = `Planilha_Notificacao_${numNotif}.json`;
+        dlAnchorElem.download = `Planilha_${nomeRazao}.json`;
 
         document.body.appendChild(dlAnchorElem);
         dlAnchorElem.click();
