@@ -440,7 +440,7 @@
             font-style: italic;
         }
 
-        /* Modal IA */
+        /* Modal Base */
         .modal-overlay {
             display: none; 
             position: fixed; 
@@ -464,6 +464,7 @@
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
             max-height: 90vh; 
+            overflow-y: auto;
             display: flex; 
             flex-direction: column;
         }
@@ -473,7 +474,9 @@
             display: flex; 
             justify-content: space-between; 
         }
-        .modal-content textarea { 
+        
+        /* Modal IA Específico */
+        #modalIA .modal-content textarea { 
             width: 100%; 
             height: 400px; 
             padding: 10px; 
@@ -754,7 +757,10 @@
             </div>
             <div class="info-cell" style="width: 50%;">
                 <label>CNPJ n°: </label>
-                <input type="text" id="cnpj" value="" class="no-print">
+                <div class="no-print" style="display: inline-flex; align-items: center; width: 80%;">
+                    <input type="text" id="cnpj" value="" style="width: 100%; border: none; background: transparent; border-bottom: 1px dashed #999; padding: 2px 5px; font-size: 1em; outline: none;">
+                    <button type="button" title="Buscar dados na Receita Federal" onclick="buscarCNPJ()" style="margin-left: 5px; padding: 4px 8px; background: var(--primary-color); color: #fff; border: none; border-radius: 4px; cursor: pointer;">🔍</button>
+                </div>
                 <span id="cnpjPrint" class="print-value"></span>
             </div>
         </div>
@@ -905,6 +911,37 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="modalCnpj" onclick="fecharModalCnpjClique(event)">
+    <div class="modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
+        <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 15px; font-size: 1.1em; justify-content: center; text-align: center;">
+            COMPROVANTE DE INSCRIÇÃO E DE SITUAÇÃO CADASTRAL
+        </h3>
+        
+        <div id="loadingCnpj" style="display:none; text-align: center; margin: 30px 0; color: var(--primary-color); font-weight: bold;">
+            Buscando dados na Receita Federal...
+        </div>
+        
+        <div id="dadosCnpjResult" style="display:none; font-size: 0.95em; line-height: 1.6; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+            <p><strong>NÚMERO DE INSCRIÇÃO:</strong> <span id="resCnpj"></span></p>
+            <p><strong>NOME EMPRESARIAL:</strong> <span id="resRazao"></span></p>
+            <p><strong>NOME DE FANTASIA:</strong> <span id="resFantasia"></span></p>
+            <p><strong>CÓDIGO E DESCRIÇÃO DA ATIVIDADE PRINCIPAL:</strong> <span id="resCnae"></span></p>
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
+            <p><strong>LOGRADOURO:</strong> <span id="resLogradouro"></span>, <span id="resNumero"></span></p>
+            <p><strong>COMPLEMENTO:</strong> <span id="resComplemento"></span></p>
+            <p><strong>CEP:</strong> <span id="resCep"></span> &nbsp;&nbsp;|&nbsp;&nbsp; <strong>BAIRRO/DISTRITO:</strong> <span id="resBairro"></span></p>
+            <p><strong>MUNICÍPIO:</strong> <span id="resMunicipio"></span> &nbsp;&nbsp;|&nbsp;&nbsp; <strong>UF:</strong> <span id="resUf"></span></p>
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
+            <p><strong>SITUAÇÃO CADASTRAL:</strong> <span id="resSituacao" style="font-weight: bold; color: #27ae60;"></span></p>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button class="btn-success" id="btnCapturarCnpj" style="display:none;" onclick="capturarDadosCnpj()">📥 Capturar para Planilha</button>
+            <button class="btn-danger" onclick="fecharModalCnpj()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="modalIA" onclick="fecharModalIAClique(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3>
@@ -935,6 +972,7 @@
     let chartInstances = {};
     let filtroDataInicioTS = 0;
     let filtroDataFimTS = Infinity;
+    let dadosCnpjTemporarios = null; // Para armazenar retorno da API CNPJ
 
     const productForm = document.getElementById('productForm');
     const entryForm = document.getElementById('entryForm');
@@ -947,6 +985,98 @@
     notificacaoInput.addEventListener('input', function() {
         notificacaoSpan.textContent = this.value;
     });
+
+    // -------------------------------------------------------------------------
+    // BUSCA DE CNPJ NA RECEITA FEDERAL (BRASIL API)
+    // -------------------------------------------------------------------------
+    async function buscarCNPJ() {
+        const inputRaw = document.getElementById('cnpj').value;
+        const cnpjLimpo = inputRaw.replace(/\D/g, '');
+
+        if (cnpjLimpo.length !== 14) {
+            alert("Por favor, digite um CNPJ válido com 14 dígitos.");
+            return;
+        }
+
+        document.getElementById('modalCnpj').classList.add('active');
+        document.getElementById('dadosCnpjResult').style.display = 'none';
+        document.getElementById('btnCapturarCnpj').style.display = 'none';
+        document.getElementById('loadingCnpj').style.display = 'block';
+        document.getElementById('loadingCnpj').textContent = "Buscando dados na Receita Federal...";
+
+        try {
+            const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+            
+            if (!response.ok) {
+                throw new Error("CNPJ não encontrado ou sistema indisponível.");
+            }
+            
+            const data = await response.json();
+            dadosCnpjTemporarios = data;
+
+            // Mascarando CNPJ visualmente
+            const cnpjMascara = data.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+
+            document.getElementById('resCnpj').textContent = cnpjMascara;
+            document.getElementById('resRazao').textContent = data.razao_social || '-';
+            document.getElementById('resFantasia').textContent = data.nome_fantasia || '-';
+            document.getElementById('resCnae').textContent = data.cnae_fiscal_descricao || '-';
+            document.getElementById('resLogradouro').textContent = data.logradouro || '-';
+            document.getElementById('resNumero').textContent = data.numero || '-';
+            document.getElementById('resComplemento').textContent = data.complemento || '-';
+            document.getElementById('resCep').textContent = data.cep || '-';
+            document.getElementById('resBairro').textContent = data.bairro || '-';
+            document.getElementById('resMunicipio').textContent = data.municipio || '-';
+            document.getElementById('resUf').textContent = data.uf || '-';
+            document.getElementById('resSituacao').textContent = data.descricao_situacao_cadastral || '-';
+
+            document.getElementById('loadingCnpj').style.display = 'none';
+            document.getElementById('dadosCnpjResult').style.display = 'block';
+            document.getElementById('btnCapturarCnpj').style.display = 'inline-block';
+
+        } catch (error) {
+            document.getElementById('loadingCnpj').textContent = "Erro na busca: " + error.message;
+        }
+    }
+
+    function fecharModalCnpj() {
+        document.getElementById('modalCnpj').classList.remove('active');
+        dadosCnpjTemporarios = null;
+    }
+
+    function fecharModalCnpjClique(event) {
+        if (event.target.id === 'modalCnpj') {
+            fecharModalCnpj();
+        }
+    }
+
+    function capturarDadosCnpj() {
+        if (!dadosCnpjTemporarios) return;
+
+        const f = dadosCnpjTemporarios;
+        
+        // Preenche Razão Social
+        document.getElementById('razaoSocial').value = f.razao_social || '';
+        
+        // Monta e Preenche Endereço
+        let enderecoCompleto = `${f.logradouro || ''}, ${f.numero || 'S/N'}`;
+        if (f.complemento) enderecoCompleto += ` - ${f.complemento}`;
+        enderecoCompleto += ` - ${f.bairro || ''}, ${f.municipio || ''} - ${f.uf || ''}, CEP: ${f.cep || ''}`;
+        document.getElementById('endereco').value = enderecoCompleto;
+
+        // Preenche Contato (se existir)
+        if (f.ddd_telefone_1) {
+            document.getElementById('contato').value = f.ddd_telefone_1;
+        }
+
+        // Formata o input CNPJ
+        const cnpjMascara = f.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+        document.getElementById('cnpj').value = cnpjMascara;
+
+        // Atualiza a visualização de impressão
+        sincronizarTodosCamposParaImpressao();
+        fecharModalCnpj();
+    }
 
     // -------------------------------------------------------------------------
     // SINCRONIZAÇÃO DOS CAMPOS PARA IMPRESSÃO
@@ -1833,6 +1963,7 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             fecharModalIA();
+            fecharModalCnpj();
         }
     });
 
