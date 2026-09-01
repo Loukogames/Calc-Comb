@@ -944,7 +944,7 @@
                         <div class="form-group"><label>Nº Doc / NF (Coluna 1) [Opcional]</label><input type="text" id="editDocId"></div>
                     </td>
                     <td style="width: 33.33%;">
-                        <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="editPeriodo" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" required></div>
+                        <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="editPeriodo" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" pattern="\d{2}/\d{2}/\d{4}" autocomplete="off" title="Digite uma data válida no formato DD/MM/AAAA" required></div>
                     </td>
                     <td style="width: 33.33%;">
                         <div class="form-group"><label>PREÇO AQUISIÇÃO [A]</label><input type="text" id="editAquisicao" inputmode="decimal" placeholder="0,0000"></div>
@@ -2129,7 +2129,7 @@
             <div style="background:#fff;max-width:460px;width:100%;padding:24px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.28);text-align:center;border-top:5px solid #c0392b;">
                 <div style="font-size:38px;margin-bottom:8px;">⚠️</div>
                 <div style="font-size:1.15em;font-weight:bold;color:#c0392b;margin-bottom:10px;">Edição não realizada</div>
-                <div style="font-size:0.98em;color:#333;line-height:1.5;margin-bottom:18px;">Não foi possível salvar a alteração porque a data informada é inválida.<br>Digite a data no formato <b>DD/MM/AAAA</b>.</div>
+                <div style="font-size:0.98em;color:#333;line-height:1.5;margin-bottom:18px;">Não foi possível salvar a alteração porque a data informada é inválida.<br>Digite uma data válida no formato <b>DD/MM/AAAA</b>. Exemplo: <b>02/02/2026</b>.</div>
                 <button type="button" id="btnOkDataInvalidaEdicao" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:8px 20px;font-weight:bold;cursor:pointer;">OK</button>
             </div>
         `;
