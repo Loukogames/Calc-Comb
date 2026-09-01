@@ -1786,6 +1786,15 @@
                 }
             });
 
+            // O Seletor Automático só pode definir uma Base quando existirem
+            // pelo menos DOIS períodos completos e válidos no produto. Com apenas
+            // uma linha válida não existe outro período para comparação, portanto
+            // nenhuma linha deve ser marcada automaticamente como Base.
+            const linhasValidasParaComparacao = prod.linhas.filter(linhaValidaParaSeletorAutomatico);
+            if (linhasValidasParaComparacao.length < 2) {
+                return;
+            }
+
             // As linhas já são mantidas em ordem cronológica pelo recalcularProduto().
             // Por padrão, a primeira linha válida, visível e não vermelha torna-se a Base.
             // Se o usuário tiver confirmado manualmente outra Base enquanto o Seletor
