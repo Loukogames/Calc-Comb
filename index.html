@@ -372,6 +372,12 @@
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact; 
         }
+        /* Quando o Seletor Automático está ativo, seleções adicionais feitas
+           manualmente pelo usuário são identificadas pela caixa roxa. */
+        .checkbox-selecao-manual-auto {
+            accent-color: #8e44ad;
+            cursor: pointer;
+        }
         .linha-oculta-visual {
             opacity: 0.35 !important;
             background-color: #f0f0f0 !important;
@@ -817,10 +823,10 @@
                                     <div class="form-group"><label>Nº Doc / NF (Coluna 1) [Opcional]</label><input type="text" id="docId"></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="periodo" placeholder="Ex: 02/02/2026" required></div>
+                                    <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="periodo" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" pattern="\d{2}/\d{2}/\d{4}" title="Digite a data no formato DD/MM/AAAA" required></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group"><label>PREÇO AQUISIÇÃO [A]</label><input type="number" id="aquisicao" step="0.0001"></div>
+                                    <div class="form-group"><label>PREÇO AQUISIÇÃO [A]</label><input type="text" id="aquisicao" inputmode="decimal" placeholder="0,0000" autocomplete="off"></div>
                                 </td>
                             </tr>
                         </table>
@@ -831,7 +837,7 @@
                                     <div class="form-group"><label>Preço do Frete [Opcional]</label><input type="number" id="frete" step="0.0001"></div>
                                 </td>
                                 <td style="width: 33.33%;">
-                                    <div class="form-group"><label>PREÇO DE VENDA [B]</label><input type="number" id="venda" step="0.0001"></div>
+                                    <div class="form-group"><label>PREÇO DE VENDA [B]</label><input type="text" id="venda" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
                                 </td>
                                 <td style="width: 33.33%;">
                                     <div class="form-group"><label>Quant. Litros [Opcional]</label><input type="number" id="qtdLitros" step="0.01"></div>
@@ -884,6 +890,14 @@
         <label title="Inclui as colunas de Aumento/Redução em R$ (Aquisição e Venda) na impressão.">
             <input type="checkbox" id="chkImprimirVarRS" onchange="atualizarTabela()"> 🖨️ Imprimir Var. (R$)
         </label>
+        <div class="panel-divider"></div>
+        <label title="Define automaticamente a primeira linha completa de cada produto como Base e seleciona as linhas cuja Margem de Lucro Bruta Estimada em R$/UNID. ultrapasse a Base pelo valor mínimo informado.">
+            <input type="checkbox" id="chkSeletorAutomatico" onchange="toggleSeletorAutomatico()"> ✅ Seletor Automático
+        </label>
+        <div style="display:flex; align-items:center; gap:6px; font-weight:normal;">
+            <span title="Valor mínimo, em R$/UNID., que a margem precisa superar em relação à linha Base.">Diferença mínima (R$/UNID.) <b style="color:#c0392b;">*</b></span>
+            <input type="text" id="valorSeletorAutomatico" inputmode="decimal" placeholder="Ex: 0,10" autocomplete="off" style="width:88px; padding:4px 6px; border:1px solid #ccc; border-radius:4px; text-align:center;">
+        </div>
 
         <div style="flex-grow: 1; text-align: right;">
             <input type="password" id="geminiApiKey" placeholder="Chave de API Gemini" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
@@ -908,6 +922,55 @@
     <div id="graficosContainer" class="no-print" style="display:none;">
         <h3>📊 Gráficos de Evolução de Preços e Margens por Produto</h3>
         <div id="graficosContent"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalEdicaoLinha" onclick="fecharModalEdicaoLinhaClique(event)">
+    <div class="modal-content" style="max-width: 780px;" onclick="event.stopPropagation()">
+        <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 18px;">
+            Editar Lançamento
+            <button type="button" class="btn-danger" style="padding: 4px 10px;" onclick="fecharModalEdicaoLinha()">X</button>
+        </h3>
+
+        <form id="editEntryForm">
+            <div class="form-group">
+                <label>Selecione o Produto Cadastrado</label>
+                <select id="editSelectProduct" required></select>
+            </div>
+
+            <table class="form-table-grid" style="margin-bottom: 10px;">
+                <tr>
+                    <td style="width: 33.33%;">
+                        <div class="form-group"><label>Nº Doc / NF (Coluna 1) [Opcional]</label><input type="text" id="editDocId"></div>
+                    </td>
+                    <td style="width: 33.33%;">
+                        <div class="form-group"><label>PERÍODO (Compra/Venda)</label><input type="text" id="editPeriodo" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" required></div>
+                    </td>
+                    <td style="width: 33.33%;">
+                        <div class="form-group"><label>PREÇO AQUISIÇÃO [A]</label><input type="text" id="editAquisicao" inputmode="decimal" placeholder="0,0000"></div>
+                    </td>
+                </tr>
+            </table>
+
+            <table class="form-table-grid">
+                <tr>
+                    <td style="width: 33.33%;">
+                        <div class="form-group"><label>Preço do Frete [Opcional]</label><input type="number" id="editFrete" step="0.0001"></div>
+                    </td>
+                    <td style="width: 33.33%;">
+                        <div class="form-group"><label>PREÇO DE VENDA [B]</label><input type="text" id="editVenda" inputmode="decimal" placeholder="0,00"></div>
+                    </td>
+                    <td style="width: 33.33%;">
+                        <div class="form-group"><label>Quant. Litros [Opcional]</label><input type="number" id="editQtdLitros" step="0.01"></div>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button type="button" class="btn-danger" onclick="fecharModalEdicaoLinha()">Cancelar</button>
+                <button type="submit" class="btn-success">💾 Salvar Alterações</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1402,11 +1465,35 @@
         return `${dia}/${mes}/${ano}`;
     }
 
+    // Mantém as linhas de cada produto sempre em ordem cronológica crescente
+    // pelo campo PERÍODO. Datas inválidas/antigas importadas ficam ao final.
+    function ordenarLinhasPorPeriodo(prod) {
+        if (!prod || !Array.isArray(prod.linhas) || prod.linhas.length < 2) return;
+
+        prod.linhas.sort((a, b) => {
+            const dataA = parseDate(a.periodo);
+            const dataB = parseDate(b.periodo);
+            const validaA = Number.isFinite(dataA) && dataA > 0;
+            const validaB = Number.isFinite(dataB) && dataB > 0;
+
+            if (validaA && validaB) {
+                const diferenca = dataA - dataB;
+                if (diferenca !== 0) return diferenca;
+
+                // Para registros da mesma data, preserva uma ordem determinística.
+                return (Number(a.id) || 0) - (Number(b.id) || 0);
+            }
+            if (validaA) return -1;
+            if (validaB) return 1;
+            return (Number(a.id) || 0) - (Number(b.id) || 0);
+        });
+    }
+
     function recalcularProduto(nomeProduto) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
         if (!prod || prod.linhas.length === 0) return;
 
-        prod.linhas.sort((a, b) => parseDate(a.periodo) - parseDate(b.periodo));
+        ordenarLinhasPorPeriodo(prod);
         
         // Bases para Margem, Aquisição e Venda (pegando a primeira preenchida)
         const primeiraLinhaValida = prod.linhas.find(l => !l.isAquisicaoVazia && !l.isVendaVazia);
@@ -1466,17 +1553,356 @@
         atualizarDropdown(); atualizarTabela(); productForm.reset();
     });
 
+    // Campo PERÍODO: aceita somente data no formato DD/MM/AAAA.
+    const periodoInput = document.getElementById('periodo');
+
+    periodoInput.addEventListener('input', function() {
+        let digitos = this.value.replace(/\D/g, '').slice(0, 8);
+
+        if (digitos.length > 4) {
+            this.value = `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`;
+        } else if (digitos.length > 2) {
+            this.value = `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+        } else {
+            this.value = digitos;
+        }
+    });
+
+    function dataBRValida(valor) {
+        const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(valor);
+        if (!match) return false;
+
+        const dia = Number(match[1]);
+        const mes = Number(match[2]);
+        const ano = Number(match[3]);
+        const data = new Date(ano, mes - 1, dia);
+
+        return data.getFullYear() === ano &&
+               data.getMonth() === mes - 1 &&
+               data.getDate() === dia;
+    }
+
+    function mostrarMensagemDataInvalida() {
+        let aviso = document.getElementById('avisoDataInvalida');
+
+        if (!aviso) {
+            aviso = document.createElement('div');
+            aviso.id = 'avisoDataInvalida';
+            aviso.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            aviso.innerHTML = `
+                <div style="background:#fff;max-width:460px;width:100%;padding:24px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.28);text-align:center;border-top:5px solid #c0392b;">
+                    <div style="font-size:38px;margin-bottom:8px;">⚠️</div>
+                    <div style="font-size:1.15em;font-weight:bold;color:#c0392b;margin-bottom:10px;">Lançamento não realizado</div>
+                    <div style="font-size:0.98em;color:#333;line-height:1.5;margin-bottom:18px;">Não foi possível realizar o lançamento porque a data informada é inválida.<br>Digite a data no formato <b>DD/MM/AAAA</b>. Exemplo: <b>02/02/2026</b>.</div>
+                    <button type="button" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:8px 20px;font-weight:bold;cursor:pointer;" onclick="document.getElementById('avisoDataInvalida').remove(); document.getElementById('periodo').focus();">OK</button>
+                </div>
+            `;
+            document.body.appendChild(aviso);
+        }
+    }
+
+    // Campos monetários em Reais: somente números e vírgula decimal.
+    // Aquisição: até 4 casas decimais. Venda: até 2 casas decimais.
+    const aquisicaoInput = document.getElementById('aquisicao');
+    const vendaInput = document.getElementById('venda');
+
+    function limitarValorReal(input, casasDecimais) {
+        let valor = input.value.replace(/[^0-9,]/g, '');
+        const primeiraVirgula = valor.indexOf(',');
+
+        if (primeiraVirgula !== -1) {
+            valor = valor.slice(0, primeiraVirgula + 1) +
+                    valor.slice(primeiraVirgula + 1).replace(/,/g, '');
+
+            const partes = valor.split(',');
+            partes[1] = (partes[1] || '').slice(0, casasDecimais);
+            valor = partes[0] + ',' + partes[1];
+        }
+
+        // Evita zeros desnecessários à esquerda, mantendo "0," quando necessário.
+        if (valor.includes(',')) {
+            let [inteiro, decimal] = valor.split(',');
+            inteiro = inteiro.replace(/^0+(?=\d)/, '');
+            valor = (inteiro || '0') + ',' + decimal;
+        } else {
+            valor = valor.replace(/^0+(?=\d)/, '');
+        }
+
+        input.value = valor;
+    }
+
+    function completarCasasDecimais(input, casasDecimais) {
+        const valor = input.value.trim();
+        if (valor === '') return;
+
+        let [inteiro, decimal = ''] = valor.split(',');
+        inteiro = inteiro || '0';
+        decimal = decimal.slice(0, casasDecimais).padEnd(casasDecimais, '0');
+        input.value = `${inteiro},${decimal}`;
+    }
+
+    function valorRealParaNumero(valor) {
+        if (!valor) return 0;
+        return parseFloat(String(valor).replace(',', '.'));
+    }
+
+    aquisicaoInput.addEventListener('input', function() {
+        limitarValorReal(this, 4);
+    });
+    aquisicaoInput.addEventListener('blur', function() {
+        completarCasasDecimais(this, 4);
+    });
+
+    vendaInput.addEventListener('input', function() {
+        limitarValorReal(this, 2);
+    });
+    vendaInput.addEventListener('blur', function() {
+        completarCasasDecimais(this, 2);
+    });
+
+    // Campos da janela de edição: usam as mesmas regras do formulário de lançamento.
+    const editPeriodoInput = document.getElementById('editPeriodo');
+    const editAquisicaoInput = document.getElementById('editAquisicao');
+    const editVendaInput = document.getElementById('editVenda');
+
+    if (editPeriodoInput) {
+        editPeriodoInput.addEventListener('input', function() {
+            let digitos = this.value.replace(/\D/g, '').slice(0, 8);
+
+            if (digitos.length > 4) {
+                this.value = `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`;
+            } else if (digitos.length > 2) {
+                this.value = `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+            } else {
+                this.value = digitos;
+            }
+        });
+    }
+
+    if (editAquisicaoInput) {
+        editAquisicaoInput.addEventListener('input', function() {
+            limitarValorReal(this, 4);
+        });
+        editAquisicaoInput.addEventListener('blur', function() {
+            completarCasasDecimais(this, 4);
+        });
+    }
+
+    if (editVendaInput) {
+        editVendaInput.addEventListener('input', function() {
+            limitarValorReal(this, 2);
+        });
+        editVendaInput.addEventListener('blur', function() {
+            completarCasasDecimais(this, 2);
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // SELETOR AUTOMÁTICO PARA IA
+    // -------------------------------------------------------------------------
+    const valorSeletorAutomaticoInput = document.getElementById('valorSeletorAutomatico');
+
+    if (valorSeletorAutomaticoInput) {
+        valorSeletorAutomaticoInput.addEventListener('input', function() {
+            // A margem em R$/UNID. é exibida com 4 casas decimais, então o limite
+            // também aceita até 4 casas, sempre usando vírgula na digitação.
+            limitarValorReal(this, 4);
+        });
+
+        valorSeletorAutomaticoInput.addEventListener('change', function() {
+            const chk = document.getElementById('chkSeletorAutomatico');
+            if (!chk || !chk.checked) return;
+
+            if (this.value.trim() === '') {
+                chk.checked = false;
+                mostrarMensagemSeletorAutomatico();
+                return;
+            }
+
+            atualizarTabela();
+        });
+    }
+
+    function mostrarMensagemSeletorAutomatico() {
+        let aviso = document.getElementById('avisoSeletorAutomatico');
+        if (aviso) return;
+
+        aviso = document.createElement('div');
+        aviso.id = 'avisoSeletorAutomatico';
+        aviso.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        aviso.innerHTML = `
+            <div style="background:#fff;max-width:500px;width:100%;padding:24px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.28);text-align:center;border-top:5px solid #c0392b;">
+                <div style="font-size:38px;margin-bottom:8px;">⚠️</div>
+                <div style="font-size:1.15em;font-weight:bold;color:#c0392b;margin-bottom:10px;">Seletor Automático não ativado</div>
+                <div style="font-size:0.98em;color:#333;line-height:1.5;margin-bottom:18px;">Informe primeiro a <b>Diferença mínima (R$/UNID.)</b> que será usada para comparar a Margem de Lucro Bruta Estimada com a linha Base.<br>Exemplo: <b>0,10</b>.</div>
+                <button type="button" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:8px 20px;font-weight:bold;cursor:pointer;" onclick="document.getElementById('avisoSeletorAutomatico').remove(); document.getElementById('valorSeletorAutomatico').focus();">OK</button>
+            </div>
+        `;
+        document.body.appendChild(aviso);
+    }
+
+    function obterValorSeletorAutomatico() {
+        const input = document.getElementById('valorSeletorAutomatico');
+        if (!input) return null;
+        const texto = input.value.trim();
+        if (texto === '') return null;
+
+        const valor = valorRealParaNumero(texto);
+        return Number.isFinite(valor) && valor >= 0 ? valor : null;
+    }
+
+    function linhaValidaParaSeletorAutomatico(linha) {
+        if (!linha || linha.visivel === false) return false;
+        if (linha.isAquisicaoVazia === true || linha.isVendaVazia === true) return false;
+        if (!dataBRValida(String(linha.periodo || '').trim())) return false;
+        if (!Number.isFinite(Number(linha.aquisicao)) || !Number.isFinite(Number(linha.venda))) return false;
+        if (!Number.isFinite(Number(linha.lucroBrutoC))) return false;
+        return true;
+    }
+
+    function recalcularSeletorAutomatico() {
+        const chk = document.getElementById('chkSeletorAutomatico');
+        if (!chk || !chk.checked) return;
+
+        const diferencaMinima = obterValorSeletorAutomatico();
+        if (diferencaMinima === null) return;
+
+        bancoDados.forEach(prod => {
+            if (!Array.isArray(prod.linhas)) return;
+
+            // O modo automático controla a Base e as seleções automáticas,
+            // mas preserva as seleções adicionais feitas manualmente.
+            prod.linhas.forEach(linha => {
+                if (linha.selecaoManualAuto !== true) linha.selecaoManualAuto = false;
+                linha.selecaoAutomatica = false;
+                linha.isBaseIA = false;
+
+                // Linha oculta não pode permanecer selecionada.
+                if (linha.visivel === false) {
+                    linha.selecaoManualAuto = false;
+                    linha.selecionado = false;
+                } else {
+                    linha.selecionado = linha.selecaoManualAuto === true;
+                }
+            });
+
+            // As linhas já são mantidas em ordem cronológica pelo recalcularProduto().
+            // Por padrão, a primeira linha válida, visível e não vermelha torna-se a Base.
+            // Se o usuário tiver confirmado manualmente outra Base enquanto o Seletor
+            // Automático estiver ativo, essa escolha passa a prevalecer enquanto for válida.
+            let linhaBase = null;
+
+            if (prod.baseManualAutoId !== undefined && prod.baseManualAutoId !== null) {
+                const baseEscolhida = prod.linhas.find(l => l.id === prod.baseManualAutoId);
+                if (baseEscolhida && linhaValidaParaSeletorAutomatico(baseEscolhida)) {
+                    linhaBase = baseEscolhida;
+                } else {
+                    // Se a Base escolhida foi excluída, ocultada ou ficou incompleta,
+                    // volta automaticamente para a primeira linha válida.
+                    prod.baseManualAutoId = null;
+                }
+            }
+
+            if (!linhaBase) {
+                linhaBase = prod.linhas.find(linhaValidaParaSeletorAutomatico);
+            }
+            if (!linhaBase) return;
+
+            linhaBase.selecaoManualAuto = false;
+            linhaBase.selecaoAutomatica = true;
+            linhaBase.isBaseIA = true;
+            linhaBase.selecionado = true;
+
+            const margemBaseRS = Number(linhaBase.lucroBrutoC) || 0;
+            const limiteSelecao = margemBaseRS + diferencaMinima;
+
+            const indiceBase = prod.linhas.indexOf(linhaBase);
+            let margemUltimaSelecionada = margemBaseRS;
+
+            // A seleção automática continua seguindo exclusivamente a lógica
+            // crescente automática. Seleções manuais extras NÃO alteram a
+            // referência usada para encontrar a próxima margem automática.
+            for (let i = indiceBase + 1; i < prod.linhas.length; i++) {
+                const linha = prod.linhas[i];
+                if (!linhaValidaParaSeletorAutomatico(linha)) continue;
+
+                const margemLinhaRS = Number(linha.lucroBrutoC) || 0;
+                const atingiuDiferencaBase = margemLinhaRS + 1e-10 >= limiteSelecao;
+                const superouUltimaSelecionada = margemLinhaRS > margemUltimaSelecionada + 1e-10;
+
+                if (atingiuDiferencaBase && superouUltimaSelecionada) {
+                    linha.selecaoAutomatica = true;
+                    linha.selecionado = true;
+                    margemUltimaSelecionada = margemLinhaRS;
+                }
+            }
+
+            // Consolida a seleção final: automática OU manual adicional.
+            prod.linhas.forEach(linha => {
+                if (linha.visivel === false) {
+                    linha.selecionado = false;
+                    return;
+                }
+                linha.selecionado = linha.isBaseIA === true ||
+                                    linha.selecaoAutomatica === true ||
+                                    linha.selecaoManualAuto === true;
+            });
+        });
+    }
+
+    function toggleSeletorAutomatico() {
+        const chk = document.getElementById('chkSeletorAutomatico');
+        if (!chk) return;
+
+        if (chk.checked && obterValorSeletorAutomatico() === null) {
+            chk.checked = false;
+            mostrarMensagemSeletorAutomatico();
+            return;
+        }
+
+        // Ao ligar manualmente o modo automático, começa uma nova rodada de
+        // seleção automática. Seleções manuais extras serão registradas somente
+        // a partir dos cliques feitos enquanto este modo estiver ligado.
+        if (chk.checked) {
+            bancoDados.forEach(prod => {
+                // Cada nova ativação começa novamente com a Base automática padrão.
+                // O usuário pode alterá-la depois, mediante confirmação.
+                prod.baseManualAutoId = null;
+                (prod.linhas || []).forEach(linha => {
+                    linha.selecaoManualAuto = false;
+                    linha.selecaoAutomatica = false;
+                });
+            });
+        } else {
+            // Ao desligar, mantém as caixas atualmente selecionadas, mas remove
+            // apenas a identificação de origem automática/manual-roxa.
+            bancoDados.forEach(prod => {
+                prod.baseManualAutoId = null;
+                (prod.linhas || []).forEach(linha => {
+                    linha.selecaoManualAuto = false;
+                    linha.selecaoAutomatica = false;
+                });
+            });
+        }
+
+        atualizarTabela();
+    }
+
     entryForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const produtoSelecionado = selectProduct.value;
         const docId = document.getElementById('docId').value;
-        const periodo = document.getElementById('periodo').value;
-        const aquisicaoStr = document.getElementById('aquisicao').value;
+        const periodo = document.getElementById('periodo').value.trim();
+        if (!dataBRValida(periodo)) {
+            mostrarMensagemDataInvalida();
+            return;
+        }
+        const aquisicaoStr = document.getElementById('aquisicao').value.trim();
         const isAquisicaoVazia = (aquisicaoStr === '');
-        const aquisicao = isAquisicaoVazia ? 0 : parseFloat(aquisicaoStr);
-        const vendaStr = document.getElementById('venda').value;
+        const aquisicao = isAquisicaoVazia ? 0 : valorRealParaNumero(aquisicaoStr);
+        const vendaStr = document.getElementById('venda').value.trim();
         const isVendaVazia = (vendaStr === '');
-        const venda = isVendaVazia ? 0 : parseFloat(vendaStr);
+        const venda = isVendaVazia ? 0 : valorRealParaNumero(vendaStr);
         const freteStr = document.getElementById('frete').value;
         const frete = (freteStr === '') ? 0 : parseFloat(freteStr);
         const qtdStr = document.getElementById('qtdLitros').value;
@@ -1487,6 +1913,10 @@
 
         const lucroBrutoC = venda - aquisicao - frete;
         const margemD = venda > 0 ? (lucroBrutoC / venda) : 0;
+
+        const linhaAnteriorEditada = editandoInfo
+            ? bancoDados.find(p => p.nome === editandoInfo.nomeProduto)?.linhas.find(l => l.id === editandoInfo.idLinha)
+            : null;
 
         const novaLinha = {
             id: editandoInfo ? editandoInfo.idLinha : Date.now(),
@@ -1502,9 +1932,11 @@
             aumentoReducaoE: 0,
             percentualReajuste: 0,
             qtdLitros: qtdLitros,
-            selecionado: false,
-            isBaseIA: false,
-            visivel: editandoInfo ? (bancoDados.find(p => p.nome === editandoInfo.nomeProduto).linhas.find(l => l.id === editandoInfo.idLinha).visivel ?? true) : true
+            selecionado: linhaAnteriorEditada ? !!linhaAnteriorEditada.selecionado : false,
+            isBaseIA: linhaAnteriorEditada ? !!linhaAnteriorEditada.isBaseIA : false,
+            selecaoManualAuto: linhaAnteriorEditada ? !!linhaAnteriorEditada.selecaoManualAuto : false,
+            selecaoAutomatica: false,
+            visivel: linhaAnteriorEditada ? (linhaAnteriorEditada.visivel ?? true) : true
         };
 
         if (editandoInfo) {
@@ -1530,28 +1962,158 @@
 
     function editarLinha(nomeProduto, idLinha) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
-        const font_linha = prod.linhas.find(l => l.id === idLinha);
+        if (!prod) return;
 
-        selectProduct.value = nomeProduto;
-        document.getElementById('docId').value = font_linha.docId;
-        document.getElementById('periodo').value = font_linha.periodo;
-        document.getElementById('aquisicao').value = font_linha.isAquisicaoVazia ? '' : font_linha.aquisicao;
-        document.getElementById('frete').value = font_linha.frete > 0 ? font_linha.frete : '';
-        document.getElementById('venda').value = font_linha.isVendaVazia ? '' : font_linha.venda;
-        document.getElementById('qtdLitros').value = (font_linha.qtdLitros && font_linha.qtdLitros > 0) ? font_linha.qtdLitros : '';
+        const linha = prod.linhas.find(l => l.id === idLinha);
+        if (!linha) return;
+
+        const editSelect = document.getElementById('editSelectProduct');
+        editSelect.innerHTML = '';
+        bancoDados.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.nome;
+            opt.textContent = p.nome;
+            editSelect.appendChild(opt);
+        });
+        editSelect.value = nomeProduto;
+
+        document.getElementById('editDocId').value = linha.docId || '';
+        document.getElementById('editPeriodo').value = linha.periodo || '';
+        document.getElementById('editAquisicao').value = linha.isAquisicaoVazia ? '' : Number(linha.aquisicao).toFixed(4).replace('.', ',');
+        document.getElementById('editFrete').value = linha.frete > 0 ? linha.frete : '';
+        document.getElementById('editVenda').value = linha.isVendaVazia ? '' : Number(linha.venda).toFixed(2).replace('.', ',');
+        document.getElementById('editQtdLitros').value = (linha.qtdLitros && linha.qtdLitros > 0) ? linha.qtdLitros : '';
 
         editandoInfo = { nomeProduto, idLinha };
-        document.getElementById('btnSubmitEntry').textContent = "Salvar Edição";
-        document.getElementById('btnSubmitEntry').classList.add('btn-edit-mode');
-        document.getElementById('btnCancelEdit').style.display = 'inline-block';
+        document.getElementById('modalEdicaoLinha').classList.add('active');
+
+        setTimeout(() => {
+            const campo = document.getElementById('editDocId');
+            if (campo) campo.focus();
+        }, 0);
     }
 
-    function cancelarEdicao(limparForm = true) {
+    function fecharModalEdicaoLinha() {
+        const modal = document.getElementById('modalEdicaoLinha');
+        if (modal) modal.classList.remove('active');
         editandoInfo = null;
+    }
+
+    function fecharModalEdicaoLinhaClique(event) {
+        if (event.target.id === 'modalEdicaoLinha') {
+            fecharModalEdicaoLinha();
+        }
+    }
+
+    // Mantida para compatibilidade com chamadas antigas do código.
+    function cancelarEdicao(limparForm = true) {
+        fecharModalEdicaoLinha();
         document.getElementById('btnSubmitEntry').textContent = "Lançar Dados na Tabela";
         document.getElementById('btnSubmitEntry').classList.remove('btn-edit-mode');
         document.getElementById('btnCancelEdit').style.display = 'none';
         if (limparForm) document.getElementById('entryForm').reset();
+    }
+
+    document.getElementById('editEntryForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!editandoInfo) return;
+
+        const nomeProdutoOriginal = editandoInfo.nomeProduto;
+        const idLinha = editandoInfo.idLinha;
+        const prodOriginal = bancoDados.find(p => p.nome === nomeProdutoOriginal);
+        if (!prodOriginal) {
+            fecharModalEdicaoLinha();
+            return;
+        }
+
+        const idxOriginal = prodOriginal.linhas.findIndex(l => l.id === idLinha);
+        if (idxOriginal < 0) {
+            fecharModalEdicaoLinha();
+            return;
+        }
+
+        const linhaAnterior = prodOriginal.linhas[idxOriginal];
+        const produtoSelecionado = document.getElementById('editSelectProduct').value;
+        const produtoDestino = bancoDados.find(p => p.nome === produtoSelecionado);
+        if (!produtoDestino) return;
+
+        const periodo = document.getElementById('editPeriodo').value.trim();
+        if (!dataBRValida(periodo)) {
+            mostrarMensagemDataInvalidaEdicao();
+            return;
+        }
+
+        const docId = document.getElementById('editDocId').value;
+        const aquisicaoStr = document.getElementById('editAquisicao').value.trim();
+        const isAquisicaoVazia = aquisicaoStr === '';
+        const aquisicao = isAquisicaoVazia ? 0 : valorRealParaNumero(aquisicaoStr);
+        const vendaStr = document.getElementById('editVenda').value.trim();
+        const isVendaVazia = vendaStr === '';
+        const venda = isVendaVazia ? 0 : valorRealParaNumero(vendaStr);
+        const freteStr = document.getElementById('editFrete').value;
+        const frete = freteStr === '' ? 0 : parseFloat(freteStr);
+        const qtdStr = document.getElementById('editQtdLitros').value;
+        const qtdLitros = qtdStr === '' ? 0 : parseFloat(qtdStr);
+
+        const lucroBrutoC = venda - aquisicao - frete;
+        const margemD = venda > 0 ? (lucroBrutoC / venda) : 0;
+
+        const linhaAtualizada = {
+            id: linhaAnterior.id,
+            docId,
+            periodo,
+            aquisicao,
+            isAquisicaoVazia,
+            frete,
+            venda,
+            isVendaVazia,
+            lucroBrutoC,
+            margemD,
+            aumentoReducaoE: linhaAnterior.aumentoReducaoE || 0,
+            percentualReajuste: linhaAnterior.percentualReajuste || 0,
+            qtdLitros,
+            selecionado: !!linhaAnterior.selecionado,
+            isBaseIA: !!linhaAnterior.isBaseIA,
+            selecaoManualAuto: !!linhaAnterior.selecaoManualAuto,
+            selecaoAutomatica: !!linhaAnterior.selecaoAutomatica,
+            visivel: linhaAnterior.visivel ?? true
+        };
+
+        if (produtoSelecionado !== nomeProdutoOriginal) {
+            prodOriginal.linhas.splice(idxOriginal, 1);
+            produtoDestino.linhas.push(linhaAtualizada);
+            recalcularProduto(nomeProdutoOriginal);
+        } else {
+            prodOriginal.linhas[idxOriginal] = linhaAtualizada;
+        }
+
+        recalcularProduto(produtoSelecionado);
+        fecharModalEdicaoLinha();
+        atualizarTabela();
+    });
+
+    function mostrarMensagemDataInvalidaEdicao() {
+        let aviso = document.getElementById('avisoDataInvalidaEdicao');
+        if (aviso) return;
+
+        aviso = document.createElement('div');
+        aviso.id = 'avisoDataInvalidaEdicao';
+        aviso.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+        aviso.innerHTML = `
+            <div style="background:#fff;max-width:460px;width:100%;padding:24px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.28);text-align:center;border-top:5px solid #c0392b;">
+                <div style="font-size:38px;margin-bottom:8px;">⚠️</div>
+                <div style="font-size:1.15em;font-weight:bold;color:#c0392b;margin-bottom:10px;">Edição não realizada</div>
+                <div style="font-size:0.98em;color:#333;line-height:1.5;margin-bottom:18px;">Não foi possível salvar a alteração porque a data informada é inválida.<br>Digite a data no formato <b>DD/MM/AAAA</b>.</div>
+                <button type="button" id="btnOkDataInvalidaEdicao" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:8px 20px;font-weight:bold;cursor:pointer;">OK</button>
+            </div>
+        `;
+        document.body.appendChild(aviso);
+
+        document.getElementById('btnOkDataInvalidaEdicao').addEventListener('click', function() {
+            aviso.remove();
+            const campo = document.getElementById('editPeriodo');
+            if (campo) campo.focus();
+        });
     }
 
     function removerLinha(nomeProduto, idLinha) {
@@ -1594,6 +2156,8 @@
                 if (linha.visivel === false) {
                     linha.selecionado = false;
                     linha.isBaseIA = false;
+                    linha.selecaoManualAuto = false;
+                    linha.selecaoAutomatica = false;
                 }
                 atualizarTabela();
             }
@@ -1615,16 +2179,139 @@
     // -------------------------------------------------------------------------
     function toggleSelecaoIA(nomeProduto, idLinha) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
+        if (!prod) return;
         const linha = prod.linhas.find(l => l.id === idLinha);
+        if (!linha || linha.visivel === false) return;
+
+        const seletorAutomaticoAtivo = document.getElementById('chkSeletorAutomatico')?.checked === true;
+
+        if (seletorAutomaticoAtivo) {
+            // A Base continua sendo exclusivamente automática.
+            if (linha.isBaseIA === true) return;
+
+            // Linhas selecionadas exclusivamente pelo algoritmo permanecem sob
+            // controle automático. O usuário pode acrescentar outras linhas.
+            if (linha.selecaoAutomatica === true && linha.selecaoManualAuto !== true) return;
+
+            // Seleção manual adicional durante o modo automático.
+            linha.selecaoManualAuto = linha.selecaoManualAuto !== true;
+            linha.selecionado = linha.selecaoAutomatica === true || linha.selecaoManualAuto === true;
+            atualizarTabela();
+            return;
+        }
+
+        linha.selecaoManualAuto = false;
+        linha.selecaoAutomatica = false;
         linha.selecionado = !linha.selecionado;
         if (!linha.selecionado) linha.isBaseIA = false;
         atualizarTabela();
     }
 
+    let alteracaoBaseAutomaticaPendente = null;
+
+    function fecharConfirmacaoMudancaBase(recarregarTabela = true) {
+        const aviso = document.getElementById('confirmacaoMudancaBaseAuto');
+        if (aviso) aviso.remove();
+        alteracaoBaseAutomaticaPendente = null;
+        if (recarregarTabela) atualizarTabela();
+    }
+
+    function confirmarMudancaBaseAutomatica() {
+        if (!alteracaoBaseAutomaticaPendente) {
+            fecharConfirmacaoMudancaBase();
+            return;
+        }
+
+        const { nomeProduto, idLinha } = alteracaoBaseAutomaticaPendente;
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        const linha = prod ? prod.linhas.find(l => l.id === idLinha) : null;
+
+        if (!prod || !linha || !linhaValidaParaSeletorAutomatico(linha)) {
+            fecharConfirmacaoMudancaBase(false);
+            atualizarTabela();
+            return;
+        }
+
+        // Registra a Base escolhida pelo usuário. O recalculo automático usa esta
+        // linha como nova referência para a diferença mínima e para a sequência crescente.
+        prod.baseManualAutoId = idLinha;
+
+        const aviso = document.getElementById('confirmacaoMudancaBaseAuto');
+        if (aviso) aviso.remove();
+        alteracaoBaseAutomaticaPendente = null;
+        atualizarTabela();
+    }
+
+    function mostrarConfirmacaoMudancaBase(nomeProduto, idLinha) {
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        const linha = prod ? prod.linhas.find(l => l.id === idLinha) : null;
+        if (!prod || !linha) {
+            atualizarTabela();
+            return;
+        }
+
+        // Não permite transformar em Base uma linha que o próprio automático
+        // considera incompleta/inválida.
+        if (!linhaValidaParaSeletorAutomatico(linha)) {
+            atualizarTabela();
+            return;
+        }
+
+        const baseAtual = prod.linhas.find(l => l.isBaseIA === true);
+        if (baseAtual && baseAtual.id === idLinha) {
+            atualizarTabela();
+            return;
+        }
+
+        alteracaoBaseAutomaticaPendente = { nomeProduto, idLinha };
+
+        const antigo = document.getElementById('confirmacaoMudancaBaseAuto');
+        if (antigo) antigo.remove();
+
+        const margem = Number(linha.lucroBrutoC) || 0;
+        const margemFormatada = margem.toLocaleString('pt-BR', {
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4
+        });
+
+        const aviso = document.createElement('div');
+        aviso.id = 'confirmacaoMudancaBaseAuto';
+        aviso.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.48);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+        aviso.innerHTML = `
+            <div style="background:#fff;max-width:520px;width:100%;padding:25px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.30);text-align:center;border-top:5px solid #f39c12;">
+                <div style="font-size:38px;margin-bottom:8px;">⚠️</div>
+                <div style="font-size:1.15em;font-weight:bold;color:#d35400;margin-bottom:10px;">Confirmar alteração da Base?</div>
+                <div style="font-size:0.98em;color:#333;line-height:1.55;margin-bottom:20px;">
+                    O <b>Seletor Automático está ativado</b>.<br><br>
+                    Deseja definir o período <b>${String(linha.periodo || '')}</b>, com margem de lucro bruta estimada de <b>R$ ${margemFormatada}</b>, como a nova <b>Base</b> de <b>${String(prod.nome || '')}</b>?<br><br>
+                    Ao confirmar, as seleções automáticas serão recalculadas a partir dessa nova Base.
+                </div>
+                <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                    <button type="button" style="background:#27ae60;color:#fff;border:none;border-radius:4px;padding:9px 20px;font-weight:bold;cursor:pointer;" onclick="confirmarMudancaBaseAutomatica()">Sim, alterar Base</button>
+                    <button type="button" style="background:#7f8c8d;color:#fff;border:none;border-radius:4px;padding:9px 20px;font-weight:bold;cursor:pointer;" onclick="fecharConfirmacaoMudancaBase()">Cancelar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(aviso);
+    }
+
     function setBaseIA(nomeProduto, idLinha) {
         const prod = bancoDados.find(p => p.nome === nomeProduto);
-        prod.linhas.forEach(l => l.isBaseIA = false);
+        if (!prod) return;
         const linha = prod.linhas.find(l => l.id === idLinha);
+        if (!linha || linha.visivel === false) {
+            atualizarTabela();
+            return;
+        }
+
+        const seletorAutomaticoAtivo = document.getElementById('chkSeletorAutomatico')?.checked === true;
+
+        if (seletorAutomaticoAtivo) {
+            mostrarConfirmacaoMudancaBase(nomeProduto, idLinha);
+            return;
+        }
+
+        prod.linhas.forEach(l => l.isBaseIA = false);
         linha.isBaseIA = true;
         linha.selecionado = true;
         atualizarTabela();
@@ -1813,9 +2500,18 @@
     // RENDERIZAÇÃO DA TABELA
     // -------------------------------------------------------------------------
     function atualizarTabela() {
+        // Antes de qualquer renderização, garante que todas as linhas estejam
+        // organizadas automaticamente pelo PERÍODO, da data mais antiga para a mais recente.
+        bancoDados.forEach(prod => ordenarLinhasPorPeriodo(prod));
+
+        // Se o Seletor Automático estiver ligado, recalcula Base e seleções somente
+        // depois da ordenação cronológica, inclusive após lançar, editar, excluir ou ocultar linhas.
+        recalcularSeletorAutomatico();
+
         sheetTableHead.innerHTML = '';
         sheetTableBody.innerHTML = '';
 
+        const seletorAutomaticoAtivo = document.getElementById('chkSeletorAutomatico') ? document.getElementById('chkSeletorAutomatico').checked : false;
         const showIndicador = document.getElementById('chkIndicador') ? document.getElementById('chkIndicador').checked : false;
         const showQtdLitros = document.getElementById('chkQtdLitros') ? document.getElementById('chkQtdLitros').checked : false;
         const showComparar = document.getElementById('chkComparar') ? document.getElementById('chkComparar').checked : false;
@@ -2019,9 +2715,33 @@
                     }
                 }
 
-                const nomeSafeBotao = prod.nome.replace(/'/g, "\\'");
-                const inputSel = `<input type="checkbox" onchange="toggleSelecaoIA('${nomeSafeBotao}', ${lin.id})" ${lin.selecionado ? 'checked' : ''} ${isOculta ? 'disabled' : ''}>`;
-                const inputBase = `<input type="radio" name="base_${nomeSafeBotao}" onchange="setBaseIA('${nomeSafeBotao}', ${lin.id})" ${lin.isBaseIA ? 'checked' : ''} ${isOculta ? 'disabled' : ''}>`;
+                const nomeSafeBotao = prod.nome.replace(/'/g, "\'");
+                const selecaoManualRoxa = seletorAutomaticoAtivo && lin.selecaoManualAuto === true;
+                const selecaoSomenteAutomatica = seletorAutomaticoAtivo && lin.selecaoAutomatica === true && !selecaoManualRoxa;
+
+                // Com o automático ligado, a Base e as seleções exclusivamente
+                // automáticas ficam protegidas. As demais caixas continuam livres
+                // para seleção manual adicional.
+                const bloquearSelecaoManual = isOculta || (seletorAutomaticoAtivo && (lin.isBaseIA === true || selecaoSomenteAutomatica));
+                let tituloSelecao = '';
+                if (isOculta) tituloSelecao = ' title="Linha oculta"';
+                else if (seletorAutomaticoAtivo && lin.isBaseIA === true) tituloSelecao = ' title="Base definida automaticamente"';
+                else if (selecaoSomenteAutomatica) tituloSelecao = ' title="Selecionado automaticamente"';
+                else if (selecaoManualRoxa) tituloSelecao = ' title="Selecionado manualmente com o Seletor Automático ativo"';
+                else if (seletorAutomaticoAtivo) tituloSelecao = ' title="Clique para selecionar manualmente além do Seletor Automático"';
+
+                const classeSelecaoManual = selecaoManualRoxa ? ' class="checkbox-selecao-manual-auto"' : '';
+                const inputSel = `<input type="checkbox"${classeSelecaoManual} onchange="toggleSelecaoIA('${nomeSafeBotao}', ${lin.id})" ${lin.selecionado ? 'checked' : ''} ${bloquearSelecaoManual ? 'disabled' : ''}${tituloSelecao}>`;
+
+                // Mesmo com o Seletor Automático ativo, uma linha válida pode ser
+                // escolhida como nova Base. A mudança somente é aplicada após confirmação.
+                const baseValidaNoAutomatico = linhaValidaParaSeletorAutomatico(lin);
+                const bloquearBaseManual = isOculta || (seletorAutomaticoAtivo && !baseValidaNoAutomatico);
+                let tituloBase = '';
+                if (isOculta) tituloBase = ' title="Linha oculta não pode ser usada como Base"';
+                else if (seletorAutomaticoAtivo && !baseValidaNoAutomatico) tituloBase = ' title="Linha incompleta não pode ser usada como Base"';
+                else if (seletorAutomaticoAtivo) tituloBase = ' title="Clique para alterar a Base automática; será solicitada confirmação"';
+                const inputBase = `<input type="radio" name="base_${nomeSafeBotao}" onchange="setBaseIA('${nomeSafeBotao}', ${lin.id})" ${lin.isBaseIA ? 'checked' : ''} ${bloquearBaseManual ? 'disabled' : ''}${tituloBase}>`;
 
                 const btnOlhoIcone = isOculta ? "👁️‍🗨️" : "👁️";
                 const btnOlhoTitle = isOculta ? "Visibilidade desativada (clique para ativar)" : "Ativo (clique para ocultar dos cálculos/gráficos/impressão)";
@@ -2669,7 +3389,9 @@ Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou ob
                 graficos: document.getElementById('chkGraficos') ? document.getElementById('chkGraficos').checked : false,
                 imprimirGraficos: document.getElementById('chkImprimirGraficos') ? document.getElementById('chkImprimirGraficos').checked : false,
                 imprimirVar: document.getElementById('chkImprimirVar') ? document.getElementById('chkImprimirVar').checked : false,
-                imprimirVarRS: document.getElementById('chkImprimirVarRS') ? document.getElementById('chkImprimirVarRS').checked : false
+                imprimirVarRS: document.getElementById('chkImprimirVarRS') ? document.getElementById('chkImprimirVarRS').checked : false,
+                seletorAutomatico: document.getElementById('chkSeletorAutomatico') ? document.getElementById('chkSeletorAutomatico').checked : false,
+                valorSeletorAutomatico: document.getElementById('valorSeletorAutomatico') ? document.getElementById('valorSeletorAutomatico').value : ''
             }
         };
 
@@ -2741,6 +3463,8 @@ Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou ob
                             l.margemD = Number(l.margemD) || 0;
                             if (l.selecionado === undefined) l.selecionado = false;
                             if (l.isBaseIA === undefined) l.isBaseIA = false;
+                            if (l.selecaoManualAuto === undefined) l.selecaoManualAuto = false;
+                            if (l.selecaoAutomatica === undefined) l.selecaoAutomatica = false;
                             if (l.visivel === undefined) l.visivel = true;
                         });
                         
@@ -2757,9 +3481,12 @@ Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou ob
                         setChk('chkImprimirGraficos', dadosBrutos.configs.imprimirGraficos);
                         setChk('chkImprimirVar', dadosBrutos.configs.imprimirVar);
                         setChk('chkImprimirVarRS', dadosBrutos.configs.imprimirVarRS);
+                        setVal('valorSeletorAutomatico', dadosBrutos.configs.valorSeletorAutomatico || '');
+                        setChk('chkSeletorAutomatico', dadosBrutos.configs.seletorAutomatico && !!dadosBrutos.configs.valorSeletorAutomatico);
                     } else {
                         setChk('chkIndicador', false); setChk('chkQtdLitros', false); setChk('chkComparar', false);
-                        setChk('chkGraficos', false); setChk('chkImprimirGraficos', false); setChk('chkImprimirVar', false); setChk('chkImprimirVarRS', false);
+                        setChk('chkGraficos', false); setChk('chkImprimirGraficos', false); setChk('chkImprimirVar', false); setChk('chkImprimirVarRS', false); setChk('chkSeletorAutomatico', false);
+                        setVal('valorSeletorAutomatico', '');
                     }
 
                     atualizarDropdown(); atualizarTabela();
@@ -2785,6 +3512,15 @@ Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou ob
             cancelarEdicao();
         }
     }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modalEdicao = document.getElementById('modalEdicaoLinha');
+            if (modalEdicao && modalEdicao.classList.contains('active')) {
+                fecharModalEdicaoLinha();
+            }
+        }
+    });
 
     atualizarTabela();
 </script>
