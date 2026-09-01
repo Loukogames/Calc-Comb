@@ -1774,12 +1774,14 @@
             // mas preserva as seleções adicionais feitas manualmente.
             prod.linhas.forEach(linha => {
                 if (linha.selecaoManualAuto !== true) linha.selecaoManualAuto = false;
+                if (linha.excluidaSelecaoAutomatica !== true) linha.excluidaSelecaoAutomatica = false;
                 linha.selecaoAutomatica = false;
                 linha.isBaseIA = false;
 
                 // Linha oculta não pode permanecer selecionada.
                 if (linha.visivel === false) {
                     linha.selecaoManualAuto = false;
+                    linha.excluidaSelecaoAutomatica = false;
                     linha.selecionado = false;
                 } else {
                     linha.selecionado = linha.selecaoManualAuto === true;
@@ -1818,6 +1820,7 @@
             if (!linhaBase) return;
 
             linhaBase.selecaoManualAuto = false;
+            linhaBase.excluidaSelecaoAutomatica = false;
             linhaBase.selecaoAutomatica = true;
             linhaBase.isBaseIA = true;
             linhaBase.selecionado = true;
@@ -1828,21 +1831,31 @@
             const indiceBase = prod.linhas.indexOf(linhaBase);
 
             // REGRA DO SELETOR AUTOMÁTICO:
-            // toda comparação é feita SEMPRE contra a margem da Base.
-            // Uma linha posterior válida é selecionada quando sua margem em
-            // R$/UNID. for igual ou superior a (margem da Base + diferença mínima).
-            // Oscilações entre os períodos não alteram a referência: uma linha
-            // selecionada nunca passa a ser a nova base de comparação.
+            // 1) A diferença mínima é SEMPRE calculada em relação à margem da Base.
+            // 2) Depois de atingir esse limite, a linha também precisa ter margem
+            //    MAIOR do que a última linha que foi efetivamente selecionada pelo
+            //    automático. Se a margem cair ou ficar igual, a linha é ignorada.
+            // 3) Uma linha desmarcada manualmente pelo usuário fica excluída do
+            //    automático enquanto o Seletor Automático permanecer ativo.
+            //
+            // Ex.: Base 0,88 e diferença 0,10 -> limite 0,98.
+            // 0,98 seleciona; 0,95 não; 1,0352 seleciona; 1,05 seleciona somente
+            // se for maior que a última selecionada; após 1,0610, 1,0500 não entra.
+            let ultimaMargemAutomaticaSelecionada = margemBaseRS;
+
             for (let i = indiceBase + 1; i < prod.linhas.length; i++) {
                 const linha = prod.linhas[i];
                 if (!linhaValidaParaSeletorAutomatico(linha)) continue;
 
                 const margemLinhaRS = Number(linha.lucroBrutoC) || 0;
                 const atingiuDiferencaBase = margemLinhaRS + 1e-10 >= limiteSelecao;
+                const superouUltimaSelecionada = margemLinhaRS > ultimaMargemAutomaticaSelecionada + 1e-10;
+                const foiDesmarcadaPeloUsuario = linha.excluidaSelecaoAutomatica === true;
 
-                if (atingiuDiferencaBase) {
+                if (atingiuDiferencaBase && superouUltimaSelecionada && !foiDesmarcadaPeloUsuario) {
                     linha.selecaoAutomatica = true;
                     linha.selecionado = true;
+                    ultimaMargemAutomaticaSelecionada = margemLinhaRS;
                 }
             }
 
@@ -1880,6 +1893,7 @@
                 (prod.linhas || []).forEach(linha => {
                     linha.selecaoManualAuto = false;
                     linha.selecaoAutomatica = false;
+                    linha.excluidaSelecaoAutomatica = false;
                 });
             });
         } else {
@@ -1890,6 +1904,7 @@
                 (prod.linhas || []).forEach(linha => {
                     linha.selecaoManualAuto = false;
                     linha.selecaoAutomatica = false;
+                    linha.excluidaSelecaoAutomatica = false;
                 });
             });
         }
@@ -1945,6 +1960,7 @@
             isBaseIA: linhaAnteriorEditada ? !!linhaAnteriorEditada.isBaseIA : false,
             selecaoManualAuto: linhaAnteriorEditada ? !!linhaAnteriorEditada.selecaoManualAuto : false,
             selecaoAutomatica: false,
+            excluidaSelecaoAutomatica: linhaAnteriorEditada ? !!linhaAnteriorEditada.excluidaSelecaoAutomatica : false,
             visivel: linhaAnteriorEditada ? (linhaAnteriorEditada.visivel ?? true) : true
         };
 
@@ -2085,6 +2101,7 @@
             isBaseIA: !!linhaAnterior.isBaseIA,
             selecaoManualAuto: !!linhaAnterior.selecaoManualAuto,
             selecaoAutomatica: !!linhaAnterior.selecaoAutomatica,
+            excluidaSelecaoAutomatica: !!linhaAnterior.excluidaSelecaoAutomatica,
             visivel: linhaAnterior.visivel ?? true
         };
 
@@ -2167,6 +2184,7 @@
                     linha.isBaseIA = false;
                     linha.selecaoManualAuto = false;
                     linha.selecaoAutomatica = false;
+                    linha.excluidaSelecaoAutomatica = false;
                 }
                 atualizarTabela();
             }
@@ -2195,14 +2213,23 @@
         const seletorAutomaticoAtivo = document.getElementById('chkSeletorAutomatico')?.checked === true;
 
         if (seletorAutomaticoAtivo) {
-            // A Base continua sendo exclusivamente automática.
-            if (linha.isBaseIA === true) return;
+            // A Base continua protegida no checkbox de seleção. Para mudar a Base,
+            // utiliza-se a coluna Base, que já possui confirmação própria.
+            if (linha.isBaseIA === true) {
+                atualizarTabela();
+                return;
+            }
 
-            // Linhas selecionadas exclusivamente pelo algoritmo permanecem sob
-            // controle automático. O usuário pode acrescentar outras linhas.
-            if (linha.selecaoAutomatica === true && linha.selecaoManualAuto !== true) return;
+            // Se a linha foi selecionada pelo algoritmo, o usuário pode removê-la,
+            // mas somente após confirmar em uma janela central.
+            if (linha.selecaoAutomatica === true && linha.selecaoManualAuto !== true) {
+                mostrarConfirmacaoRemocaoSelecaoAutomatica(nomeProduto, idLinha);
+                return;
+            }
 
-            // Seleção manual adicional durante o modo automático.
+            // Seleção manual adicional durante o modo automático (caixa roxa).
+            // Uma linha que foi excluída manualmente do automático pode ser incluída
+            // novamente como seleção manual, sem voltar a interferir no algoritmo.
             linha.selecaoManualAuto = linha.selecaoManualAuto !== true;
             linha.selecionado = linha.selecaoAutomatica === true || linha.selecaoManualAuto === true;
             atualizarTabela();
@@ -2214,6 +2241,85 @@
         linha.selecionado = !linha.selecionado;
         if (!linha.selecionado) linha.isBaseIA = false;
         atualizarTabela();
+    }
+
+    let remocaoSelecaoAutomaticaPendente = null;
+
+    function fecharConfirmacaoRemocaoSelecaoAutomatica(recarregarTabela = true) {
+        const aviso = document.getElementById('confirmacaoRemocaoSelecaoAuto');
+        if (aviso) aviso.remove();
+        remocaoSelecaoAutomaticaPendente = null;
+        if (recarregarTabela) atualizarTabela();
+    }
+
+    function confirmarRemocaoSelecaoAutomatica() {
+        if (!remocaoSelecaoAutomaticaPendente) {
+            fecharConfirmacaoRemocaoSelecaoAutomatica();
+            return;
+        }
+
+        const { nomeProduto, idLinha } = remocaoSelecaoAutomaticaPendente;
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        const linha = prod ? prod.linhas.find(l => l.id === idLinha) : null;
+
+        if (!prod || !linha || linha.isBaseIA === true) {
+            fecharConfirmacaoRemocaoSelecaoAutomatica(false);
+            atualizarTabela();
+            return;
+        }
+
+        // Impede que o recálculo automático marque novamente a mesma linha.
+        // As linhas posteriores serão reavaliadas normalmente com base na Base e
+        // na última linha automática que permaneceu efetivamente selecionada.
+        linha.excluidaSelecaoAutomatica = true;
+        linha.selecaoAutomatica = false;
+        linha.selecaoManualAuto = false;
+        linha.selecionado = false;
+
+        const aviso = document.getElementById('confirmacaoRemocaoSelecaoAuto');
+        if (aviso) aviso.remove();
+        remocaoSelecaoAutomaticaPendente = null;
+        atualizarTabela();
+    }
+
+    function mostrarConfirmacaoRemocaoSelecaoAutomatica(nomeProduto, idLinha) {
+        const prod = bancoDados.find(p => p.nome === nomeProduto);
+        const linha = prod ? prod.linhas.find(l => l.id === idLinha) : null;
+        if (!prod || !linha || linha.isBaseIA === true || linha.selecaoAutomatica !== true) {
+            atualizarTabela();
+            return;
+        }
+
+        remocaoSelecaoAutomaticaPendente = { nomeProduto, idLinha };
+
+        const antigo = document.getElementById('confirmacaoRemocaoSelecaoAuto');
+        if (antigo) antigo.remove();
+
+        const margem = Number(linha.lucroBrutoC) || 0;
+        const margemFormatada = margem.toLocaleString('pt-BR', {
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4
+        });
+
+        const aviso = document.createElement('div');
+        aviso.id = 'confirmacaoRemocaoSelecaoAuto';
+        aviso.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.48);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+        aviso.innerHTML = `
+            <div style="background:#fff;max-width:520px;width:100%;padding:25px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.30);text-align:center;border-top:5px solid #f39c12;">
+                <div style="font-size:38px;margin-bottom:8px;">⚠️</div>
+                <div style="font-size:1.15em;font-weight:bold;color:#d35400;margin-bottom:10px;">Confirmar desmarcação?</div>
+                <div style="font-size:0.98em;color:#333;line-height:1.55;margin-bottom:20px;">
+                    Esta linha foi selecionada pelo <b>Seletor Automático</b>.<br><br>
+                    Deseja desmarcar o período <b>${String(linha.periodo || '')}</b>, com margem de lucro bruta estimada de <b>R$ ${margemFormatada}</b>, em <b>${String(prod.nome || '')}</b>?<br><br>
+                    Ao confirmar, essa linha ficará fora da seleção automática enquanto o Seletor Automático permanecer ativo, e as linhas seguintes serão recalculadas pela sequência crescente.
+                </div>
+                <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                    <button type="button" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:9px 20px;font-weight:bold;cursor:pointer;" onclick="confirmarRemocaoSelecaoAutomatica()">Sim, desmarcar</button>
+                    <button type="button" style="background:#7f8c8d;color:#fff;border:none;border-radius:4px;padding:9px 20px;font-weight:bold;cursor:pointer;" onclick="fecharConfirmacaoRemocaoSelecaoAutomatica()">Cancelar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(aviso);
     }
 
     let alteracaoBaseAutomaticaPendente = null;
@@ -2728,15 +2834,17 @@
                 const selecaoManualRoxa = seletorAutomaticoAtivo && lin.selecaoManualAuto === true;
                 const selecaoSomenteAutomatica = seletorAutomaticoAtivo && lin.selecaoAutomatica === true && !selecaoManualRoxa;
 
-                // Com o automático ligado, a Base e as seleções exclusivamente
-                // automáticas ficam protegidas. As demais caixas continuam livres
-                // para seleção manual adicional.
-                const bloquearSelecaoManual = isOculta || (seletorAutomaticoAtivo && (lin.isBaseIA === true || selecaoSomenteAutomatica));
+                // Com o automático ligado, somente a Base fica protegida no checkbox
+                // de seleção. Uma seleção automática comum pode ser desmarcada mediante
+                // confirmação. As demais continuam livres para seleção manual roxa.
+                const bloquearSelecaoManual = isOculta || (seletorAutomaticoAtivo && lin.isBaseIA === true);
+                const excluidaDoAutomatico = seletorAutomaticoAtivo && lin.excluidaSelecaoAutomatica === true;
                 let tituloSelecao = '';
                 if (isOculta) tituloSelecao = ' title="Linha oculta"';
-                else if (seletorAutomaticoAtivo && lin.isBaseIA === true) tituloSelecao = ' title="Base definida automaticamente"';
-                else if (selecaoSomenteAutomatica) tituloSelecao = ' title="Selecionado automaticamente"';
+                else if (seletorAutomaticoAtivo && lin.isBaseIA === true) tituloSelecao = ' title="Base automática; altere pela coluna Base"';
+                else if (selecaoSomenteAutomatica) tituloSelecao = ' title="Selecionado automaticamente; clique para desmarcar com confirmação"';
                 else if (selecaoManualRoxa) tituloSelecao = ' title="Selecionado manualmente com o Seletor Automático ativo"';
+                else if (excluidaDoAutomatico) tituloSelecao = ' title="Desmarcada manualmente do automático; clique para selecionar manualmente"';
                 else if (seletorAutomaticoAtivo) tituloSelecao = ' title="Clique para selecionar manualmente além do Seletor Automático"';
 
                 const classeSelecaoManual = selecaoManualRoxa ? ' class="checkbox-selecao-manual-auto"' : '';
@@ -3474,6 +3582,7 @@ Traga como resposta APENAS o texto reescrito e refinado, sem introduções ou ob
                             if (l.isBaseIA === undefined) l.isBaseIA = false;
                             if (l.selecaoManualAuto === undefined) l.selecaoManualAuto = false;
                             if (l.selecaoAutomatica === undefined) l.selecaoAutomatica = false;
+                            if (l.excluidaSelecaoAutomatica === undefined) l.excluidaSelecaoAutomatica = false;
                             if (l.visivel === undefined) l.visivel = true;
                         });
                         
