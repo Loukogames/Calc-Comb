@@ -2132,7 +2132,7 @@
     // Função unificada que implementa o modelo em cascata e o Exponential Backoff
     async function chamarApiGeminiHA(apiKey, promptText) {
         // Modelos em ordem de fallback definidos na instrução
-        const modelos = ['gmini-3.5-flash', 'gmini-3.1-flash-lite', 'gmini-flash-latest'];
+        const modelos = ['gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
         const maxTentativas = 3;
         let ultimoErro = "";
 
