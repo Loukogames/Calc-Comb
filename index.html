@@ -1826,23 +1826,23 @@
             const limiteSelecao = margemBaseRS + diferencaMinima;
 
             const indiceBase = prod.linhas.indexOf(linhaBase);
-            let margemUltimaSelecionada = margemBaseRS;
 
-            // A seleção automática continua seguindo exclusivamente a lógica
-            // crescente automática. Seleções manuais extras NÃO alteram a
-            // referência usada para encontrar a próxima margem automática.
+            // REGRA DO SELETOR AUTOMÁTICO:
+            // toda comparação é feita SEMPRE contra a margem da Base.
+            // Uma linha posterior válida é selecionada quando sua margem em
+            // R$/UNID. for igual ou superior a (margem da Base + diferença mínima).
+            // Oscilações entre os períodos não alteram a referência: uma linha
+            // selecionada nunca passa a ser a nova base de comparação.
             for (let i = indiceBase + 1; i < prod.linhas.length; i++) {
                 const linha = prod.linhas[i];
                 if (!linhaValidaParaSeletorAutomatico(linha)) continue;
 
                 const margemLinhaRS = Number(linha.lucroBrutoC) || 0;
                 const atingiuDiferencaBase = margemLinhaRS + 1e-10 >= limiteSelecao;
-                const superouUltimaSelecionada = margemLinhaRS > margemUltimaSelecionada + 1e-10;
 
-                if (atingiuDiferencaBase && superouUltimaSelecionada) {
+                if (atingiuDiferencaBase) {
                     linha.selecaoAutomatica = true;
                     linha.selecionado = true;
-                    margemUltimaSelecionada = margemLinhaRS;
                 }
             }
 
